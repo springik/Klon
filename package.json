@@ -1,0 +1,30 @@
+{
+  "name": "nuxt-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@vite-pwa/assets-generator": "^0.2.6",
+    "@vite-pwa/nuxt": "^0.10.5",
+    "nuxt": "^3.13.0",
+    "vite-plugin-pwa": "^0.20.5",
+    "vue": "latest",
+    "vue-router": "latest",
+    "workbox-build": "^7.1.0",
+    "workbox-window": "^7.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vue-tsc": "^2.1.4"
+  },
+  "overrides": {
+    "sharp": "0.32.6",
+    "sharp-ico": "0.1.5"
+  }
+}
