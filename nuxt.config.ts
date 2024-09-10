@@ -10,6 +10,15 @@ export default defineNuxtConfig({
 
   modules: ['@vite-pwa/nuxt', '@nuxtjs/tailwindcss'],
 
+  tailwindcss: {
+    cssPath: '~/assets/css/tailwind.css', 
+    configPath: 'tailwind.config', 
+    exposeConfig: false, 
+    config: {}, 
+    injectPosition: 0, 
+    viewer: false,
+  },
+
   pwa: {
     registerType: 'prompt',
     injectRegister: false,
