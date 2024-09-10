@@ -3,5 +3,5 @@
 </script>
 
 <template>
-  <NuxtWelcome />
+  <button class="btn">DaisyUI Test</button>
 </template>

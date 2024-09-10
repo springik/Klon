@@ -10,9 +10,12 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@nuxtjs/tailwindcss": "^6.12.1",
     "@vite-pwa/assets-generator": "^0.2.6",
     "@vite-pwa/nuxt": "^0.10.5",
     "nuxt": "^3.13.0",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5",
     "vite-plugin-pwa": "^0.20.5",
     "vue": "latest",
     "vue-router": "latest",
@@ -20,6 +23,7 @@
     "workbox-window": "^7.1.0"
   },
   "devDependencies": {
+    "daisyui": "^4.12.10",
     "typescript": "^5.4.5",
     "vue-tsc": "^2.1.4"
   },
