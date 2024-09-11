@@ -1,0 +1,1 @@
+export const authCookieName = "klon-user-cookie"

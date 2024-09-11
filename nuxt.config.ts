@@ -9,6 +9,13 @@ export default defineNuxtConfig({
   },
 
   modules: ['@vite-pwa/nuxt', '@nuxtjs/tailwindcss'],
+  runtimeConfig: {
+    DATABASE_USERNAME : process.env.DATABASE_USERNAME,
+    DATABASE_PASSWORD : process.env.DATABASE_PASSWORD,
+    DATABASE_HOST : process.env.DATABASE_HOST,
+    DATABASE_NAME : process.env.DATABASE_NAME,
+
+  },
 
   tailwindcss: {
     cssPath: '~/assets/css/tailwind.css', 
