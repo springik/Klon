@@ -3,5 +3,5 @@
 </script>
 
 <template>
-  <button class="btn">DaisyUI Test</button>
+  <UButton label="NuxtUI test"></UButton>
 </template>

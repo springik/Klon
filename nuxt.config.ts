@@ -1,6 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
+  compatibilityDate: '2024-09-12',
 
   nitro: {
     prerender: {
@@ -8,7 +9,7 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ['@vite-pwa/nuxt', '@nuxtjs/tailwindcss'],
+  modules: ['@vite-pwa/nuxt', '@nuxt/ui'],
   runtimeConfig: {
     DATABASE_USERNAME : process.env.DATABASE_USERNAME,
     DATABASE_PASSWORD : process.env.DATABASE_PASSWORD,

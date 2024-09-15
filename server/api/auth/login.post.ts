@@ -4,7 +4,12 @@ import loggedIn from "~/server/utils/login.helper";
 
 export default defineEventHandler(async (event) => {
     try {
-        loggedIn(event)
+        const userAuth = loggedIn(event)
+        if(!userAuth)
+            throw createError({
+                status: 401,
+                message: 'Unauthorized'
+            })
 
         const body = await readBody(event)
 
@@ -21,7 +26,7 @@ export default defineEventHandler(async (event) => {
                 message: 'User not found'
             })
         
-        setCookie(event, authCookieName, user.id, {
+        setCookie(event, authCookieName, user.id.toString(), {
             maxAge: 86_400,
             httpOnly: true
         })

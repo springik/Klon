@@ -1,8 +1,17 @@
-import { DataType, DataTypes, Model } from "sequelize";
+import { DataTypes, Model } from "sequelize";
 
-export class User extends Model {}
+export class User extends Model {
+    declare id: string;
+    declare username: string;
+    declare email: string;
+}
 
 User.init({
+    id: {
+        type: DataTypes.UUID,
+        primaryKey: true,
+        defaultValue: DataTypes.UUIDV4
+    },
     username: {
         type: DataTypes.STRING,
         allowNull: false,
