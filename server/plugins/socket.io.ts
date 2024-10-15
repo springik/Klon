@@ -10,7 +10,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
     const io = new Server(engine);
 
     io.bind(engine);
-    //io.use(socketAuth)
+    io.use(socketAuth)
 
     io.on("connection", (socket) => {
 

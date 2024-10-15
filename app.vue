@@ -8,7 +8,9 @@
     <NuxtLoadingIndicator />
     <NuxtLayout>
       <NuxtPage />
+      <NuxtSnackbar />
     </NuxtLayout>
+
   </div>
 
 </template>

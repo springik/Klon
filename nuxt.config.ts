@@ -12,7 +12,12 @@ export default defineNuxtConfig({
     }
   },
 
-  modules: ['@vite-pwa/nuxt', '@nuxt/ui', 'nuxt-auth-utils'],
+  modules: [
+    '@vite-pwa/nuxt',
+    '@nuxt/ui',
+    'nuxt-auth-utils',
+    'nuxt-snackbar',
+  ],
   runtimeConfig: {
     DATABASE_USERNAME : process.env.DATABASE_USERNAME,
     DATABASE_PASSWORD : process.env.DATABASE_PASSWORD,

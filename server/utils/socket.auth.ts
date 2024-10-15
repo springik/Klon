@@ -1,7 +1,12 @@
 import { Socket } from "socket.io";
 
 export default async function socketAuth(socket : Socket, next : Function) {
-    //@ts-expect-error
-    const session = await requireUserSession(socket.request)
-    next()
+    try {
+        //@ts-expect-error
+        socket.handshake.session = await requireUserSession(socket.request)
+        next()
+    } catch (error) {
+        console.error("Socket.io auth middleware error" + error)
+        next(new Error("Unauthorized"))
+    }
 }
