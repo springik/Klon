@@ -15,6 +15,7 @@
     "@vite-pwa/nuxt": "^0.10.5",
     "joi": "^17.13.3",
     "nuxt": "^3.13.1",
+    "nuxt-auth-utils": "^0.4.4",
     "pg": "^8.12.0",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.3",

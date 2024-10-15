@@ -7,15 +7,21 @@ export default defineNuxtConfig({
     prerender: {
       routes: ['/'],
     },
+    experimental: {
+      websocket: true
+    }
   },
 
-  modules: ['@vite-pwa/nuxt', '@nuxt/ui'],
+  modules: ['@vite-pwa/nuxt', '@nuxt/ui', 'nuxt-auth-utils'],
   runtimeConfig: {
     DATABASE_USERNAME : process.env.DATABASE_USERNAME,
     DATABASE_PASSWORD : process.env.DATABASE_PASSWORD,
     DATABASE_HOST : process.env.DATABASE_HOST,
     DATABASE_NAME : process.env.DATABASE_NAME,
 
+    public: {
+      serverUrl: process.env.SERVER_URL
+    }
   },
 
   tailwindcss: {
