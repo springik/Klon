@@ -1,12 +1,13 @@
 import { io, Socket } from "socket.io-client";
 
-let socket : Socket
-
 export default defineNuxtPlugin((nuxtApp) => {
+    let socket : Socket
+
     const serverUrl = nuxtApp.$config.public.serverUrl
-    console.log(serverUrl);
+    const { loggedIn } = useUserSession()
+    console.log(loggedIn);
     
-    socket = io(serverUrl)
+    socket = io(serverUrl, { autoConnect: loggedIn.value })
 
     const snackbar = useSnackbar()
     socket.on("connect_error", (error) => {
@@ -19,11 +20,19 @@ export default defineNuxtPlugin((nuxtApp) => {
         }
     })
     socket.on("disconnect", (reason, details) => {
-        console.log(reason);
+        //console.log(reason);
         snackbar.add({
             type: 'error',
             text: `Disconnected for ${reason}`,
         })
+    })
+    watch(() => loggedIn.value, (newVal) => {
+        if(newVal && !socket.connected) {
+            socket.connect()
+            return
+        }
+        if(socket.connected)
+            socket.disconnect()
     })
 
     nuxtApp.provide('socket', socket)

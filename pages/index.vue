@@ -1,17 +1,15 @@
 <script setup lang="ts">
-  import type { Socket } from 'socket.io-client';
-  const { $socket } = useNuxtApp()
+  import { io } from 'socket.io-client';
+  const socket = io()
+  const { session } = useUserSession()
+  console.log(session);
+
   const snackbar = useSnackbar()
 
   const testSocket = () => {
-    console.log($socket);
-    //@ts-expect-error
-    $socket.emit('test-event', 'hello')
-
-    snackbar.add({
-      type: 'success',
-      text: 'test'
-    })
+    socket.emit('test-event', 'hello testing')
+    console.log(socket);
+    
   }
 </script>
 
