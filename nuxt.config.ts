@@ -1,5 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  hooks: {
+    close: (nuxt) => {
+      if(!nuxt.options._prepare)
+        process.exit()
+    }
+  },
   devtools: { enabled: true },
   compatibilityDate: '2024-09-12',
 

@@ -1,6 +1,8 @@
 import { io, Socket } from "socket.io-client";
 
 export default defineNuxtPlugin((nuxtApp) => {
+    console.log("Running socket.io client plugin");
+
     let socket : Socket
 
     const serverUrl = nuxtApp.$config.public.serverUrl

@@ -7,6 +7,8 @@ import { User } from "../models/User.model";
 
 export default defineNitroPlugin(async (nitro) => {
     try {
+        console.log("Running db plugin");
+        
         registerModels()
         await sequelize.authenticate()
         await sequelize.sync({ alter: true, force: false })
@@ -17,12 +19,10 @@ export default defineNitroPlugin(async (nitro) => {
                 //@ts-expect-error
                 model.associate(sequelize.models)
         })
-        
     } catch (error) {
         console.log(error)
     }
 })
-
 function registerModels() {
     sequelize.modelManager.addModel(User)
     sequelize.modelManager.addModel(Server)

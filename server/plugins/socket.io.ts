@@ -1,9 +1,10 @@
-import type { NitroApp, NitroDevServer, NitroRuntimeHooks } from "nitropack";
+import type { NitroApp } from "nitropack";
 import { Server as Engine } from "engine.io";
 import { Server } from "socket.io";
 import { defineEventHandler } from "h3";
 
 export default defineNitroPlugin((nitroApp: NitroApp) => {
+  console.log("Running socket.io plugin");
   const engine = new Engine();
   const io = new Server();
   io.bind(engine);
