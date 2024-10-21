@@ -11,6 +11,8 @@ export class User extends Model {
 
     static associate(models : any) {
         this.hasMany(models.Message, { foreignKey: 'authorId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+        this.hasMany(models.Message, { foreignKey: 'receiverId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+        this.hasMany(models.Server, { foreignKey: 'ownerId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
         this.belongsToMany(User, { through: models.Friendship, as: 'Friends', foreignKey: 'firstFriendId', otherKey: 'secondFriendId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
         this.hasMany(models.FriendshipRequest, { as: 'SentRequests', foreignKey: 'senderId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
         this.hasMany(models.FriendshipRequest, { as: 'ReceivedRequests', foreignKey: 'receiverid', onDelete: 'CASCADE', onUpdate: 'CASCADE' })

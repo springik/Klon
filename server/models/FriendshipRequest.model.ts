@@ -1,6 +1,6 @@
 import { DataTypes, Model } from "sequelize";
 
-export class FriendshipRequest extends Model {
+export class Friendship extends Model {
     declare id: string;
     declare firstFriendId: string;
     declare secondFriendId: string;
@@ -12,7 +12,7 @@ export class FriendshipRequest extends Model {
         this.belongsTo(models.User, { foreignKey: 'secondFriendId', as: 'Friend' })
     }
 }
-FriendshipRequest.init({
+Friendship.init({
     id: {
         type: DataTypes.UUID,
         primaryKey: true,
@@ -34,4 +34,4 @@ FriendshipRequest.init({
             key: 'id'
         }
     }
-}, { sequelize, timestamps: true, tableName: 'FriendshipRequests' })
+}, { sequelize, timestamps: true, tableName: 'Friendships' })

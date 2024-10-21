@@ -1,6 +1,6 @@
 import { Conversation } from "../models/Conversation.model";
-import { Friendship } from "../models/Friendship.model";
-import { FriendshipRequest } from "../models/FriendshipRequest.model";
+import { FriendshipRequest } from "../models/Friendship.model";
+import { Friendship } from "../models/FriendshipRequest.model";
 import { Message } from "../models/Message.model";
 import { Server } from "../models/Server.model";
 import { User } from "../models/User.model";
@@ -10,8 +10,6 @@ export default defineNitroPlugin(async (nitro) => {
         console.log("Running db plugin");
         
         registerModels()
-        await sequelize.authenticate()
-        await sequelize.sync({ alter: true, force: false })
         console.log(sequelize.models);
         Object.values(sequelize.models).forEach(model => {
             //@ts-expect-error
@@ -19,6 +17,8 @@ export default defineNitroPlugin(async (nitro) => {
                 //@ts-expect-error
                 model.associate(sequelize.models)
         })
+        await sequelize.authenticate()
+        await sequelize.sync({ alter: false, force: false })
     } catch (error) {
         console.log(error)
     }

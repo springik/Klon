@@ -1,6 +1,6 @@
 import { DataTypes, Model } from "sequelize";
 
-export class Friendship extends Model {
+export class FriendshipRequest extends Model {
     declare id: string;
     declare senderId: string;
     declare receiverid: string;
@@ -13,7 +13,7 @@ export class Friendship extends Model {
         this.belongsTo(models.User, { foreignKey: 'receiverId', as: 'Receiver' })
     }
 }
-Friendship.init({
+FriendshipRequest.init({
     id: {
         type: DataTypes.UUID,
         primaryKey: true,
@@ -37,4 +37,4 @@ Friendship.init({
         type: DataTypes.ENUM('pending', 'accepted', 'declined'),
         defaultValue: 'pending'
     }
-}, { sequelize, timestamps: true, tableName: 'Friendships' })
+}, { sequelize, timestamps: true, tableName: 'FriendshipRequests' })

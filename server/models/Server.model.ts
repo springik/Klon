@@ -9,6 +9,7 @@ export class Server extends Model {
 
     static associate(models : any) {
         this.hasMany(models.Conversation, { foreignKey: 'serverId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+        this.belongsTo(models.User, { foreignKey: 'ownerId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
     }
 }
 Server.init({

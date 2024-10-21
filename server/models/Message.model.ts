@@ -11,6 +11,7 @@ export class Message extends Model {
     static associate(models : any) {
         this.belongsTo(models.User, { foreignKey: 'authorId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
         this.belongsTo(models.Conversation, { foreignKey: 'conversationId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+        this.belongsTo(models.User, { foreignKey: 'receiverId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
     }
 }
 Message.init({
@@ -35,6 +36,14 @@ Message.init({
         allowNull: true,
         references: {
             model: 'Conversations',
+            key: 'id'
+        }
+    },
+    receiverId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: {
+            model: 'Users',
             key: 'id'
         }
     }
