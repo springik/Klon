@@ -1,10 +1,13 @@
 import type { NitroApp } from "nitropack";
 import { Server as Engine } from "engine.io";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 import { defineEventHandler } from "h3";
 import { User } from "../models/User.model";
 import { Friendship } from "../models/FriendshipRequest.model";
+import { Message } from "../models/Message.model";
+import { Op } from "sequelize";
 
+let users = new Map();
 export default defineNitroPlugin((nitroApp: NitroApp) => {
   console.log("Running socket.io plugin");
   const engine = new Engine();
@@ -14,24 +17,40 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
 
   io.on("connection", (socket) => {
     console.log("A user connected");
+    users.set(socket.handshake.session.user.id, socket.id);
 
     socket.on('add-friend', async (friendEmail) => {
       try {
         const user : User = await User.findByPk(socket.handshake.session.user.id);
         const friend : User = await User.findOne({where: {email: friendEmail}});
         if(!friend) {
-          socket.emit('friend-added', {success: false, message: 'User not found'});
-          return;
+          const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+          userSocket?.emit('friend-added', friend);
+          return
         }
-        
+
         await Friendship.create({firstFriendId: user.id, secondFriendId: friend.id});
-        console.log(friend.dataValues);
+        const friendSocket : Socket | undefined = io.sockets.sockets.get(users.get(friend.id));
+        friendSocket?.emit('friend-added', user);
         
-        socket.emit('friend-added', friend );
       } catch (error) {
         console.error(error);
-        socket.emit('friend-added', {success: false, message: 'An error occurred'});
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        userSocket.emit('friend-added', {success: false, message: 'An error occurred'});
       }
+    })
+
+    socket.on('request-messages', async (friendId) => {
+      const messages = await Message.findAll({
+        where: {
+          [Op.or]: [
+            {authorId: socket.handshake.session.user.id, receiverId: friendId},
+            {authorId: friendId, receiverId: socket.handshake.session.user.id}
+          ]
+        }
+      })
+      const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+      userSocket?.emit('messages', messages);
     })
     
 
@@ -43,15 +62,24 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
             as: 'Friends'
           }
         });
-        console.log(user.Friends);
+        const friends = user.Friends.map(friend => {
+          return {
+            id: friend.id,
+            username: friend.username,
+            email: friend.email,
+            avatarUrl: friend.avatarUrl
+          }
+        })
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        console.log(users);
+        console.log(users.get(socket.handshake.session.user.id));
         if(user)
-          socket.emit('friends-list', user.Friends);
+          userSocket?.emit('friends-list', friends);
         else
-          socket.emit('friends-list', []);
+          userSocket?.emit('friends-list', []);
 
       } catch (error) {
         console.error(error);
-        socket.emit('friends-list', []);
       }
     })
     socket.on('test-event', (data) => {

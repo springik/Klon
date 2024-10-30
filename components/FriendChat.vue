@@ -6,6 +6,8 @@
     
     const emit = defineEmits(['goBack'])
 
+    const { $socket } = useNuxtApp()
+
     const goBack = () => {
         emit('goBack')
     }
@@ -18,11 +20,16 @@
     }
 
     onMounted(() => {
-        messages.value = [
-            { id: 1, content: 'hey', author: { id: 1, name: 'foo', avatarUrl: 'https://lh3.googleusercontent.com/a/ACg8ocK8ZZV7yW6bEHGe1EVa9uZnZ2ZGfsd_hbBJM67zbRxe9et7GRsP=s96-c'} },
-            { id: 2, content: 'hello there', author: { id: 2, name: 'bar', avatarUrl: 'https://avatars.githubusercontent.com/u/95045384?v=4'} },
-            { id: 3, content: 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aliquam erat volutpat. Fusce aliquam vestibulum ipsum. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Phasellus rhoncus. Quisque tincidunt scelerisque libero. Etiam quis quam. Etiam bibendum elit eget erat. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Integer tempor. ', author: { id: 2, name: 'bar', avatarUrl: 'https://avatars.githubusercontent.com/u/95045384?v=4'} }
-        ]
+        $socket.on('messages', (data) => {
+            console.log(data);
+            messages.value = data
+            console.log('Received messages');
+        })
+        $socket.emit('request-messages', props.friend.id)
+    })
+
+    onBeforeUnmount(() => {
+        $socket.off('messages')
     })
 </script>
 

@@ -18,14 +18,7 @@
     }
 
     onMounted(async () => {
-        $socket.emit('request-friends')
-        /*
-        friends.value = [
-            { id: 1, name: 'user1', online: true, avatarUrl: 'https://lh3.googleusercontent.com/a/ACg8ocK8ZZV7yW6bEHGe1EVa9uZnZ2ZGfsd_hbBJM67zbRxe9et7GRsP=s96-c'},
-            { id: 2, name: 'user2', online: false, avatarUrl: 'https://avatars.githubusercontent.com/u/95045384?v=4'}
-        ]
-            */
-        console.log($socket);
+        console.log($socket.id);
         $socket.on('friends-list', (friendsList) => {
             console.log('Receiving friends');
             
@@ -35,6 +28,7 @@
             console.log('Friend added', data);
             friends.value.push(data)
         })
+        $socket.emit('request-friends')
     })
     onBeforeUnmount(() => {
         $socket.off('friends-list')
