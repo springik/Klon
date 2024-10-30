@@ -16,7 +16,7 @@ export default defineOAuthGoogleEventHandler({
                 }
             })
     
-            await setUserSession(event, { userInstance })
+            await setUserSession(event, { user: userInstance })
             return sendRedirect(event, '/')
         } catch (error) {
             return sendRedirect(event, '/login')

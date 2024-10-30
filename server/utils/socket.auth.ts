@@ -1,15 +1,13 @@
 import { Socket } from "socket.io";
+import { User } from "../models/User.model";
 
 export default async function socketAuth(socket : Socket, next : Function) {
     try {
-        
-        //@ts-expect-error
-        //socket.handshake.session = await requireUserSession(socket.request)
-        const session = await getUserSession(socket.request)
-        console.log(session);
-        
-        //@ts-expect-error
-        console.log(socket.handshake.session);
+        const user = await User.findByPk(socket.handshake.auth.userId)
+        if(user)
+            socket.handshake.session = { user }
+        else
+            next(new Error("Unauthorized"))
         
         next()
     } catch (error) {

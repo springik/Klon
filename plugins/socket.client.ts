@@ -6,10 +6,12 @@ export default defineNuxtPlugin((nuxtApp) => {
     let socket : Socket
 
     const serverUrl = nuxtApp.$config.public.serverUrl
-    const { loggedIn } = useUserSession()
-    console.log(loggedIn);
+    const { loggedIn, session } = useUserSession()
+    const userId = session.value?.user?.id
     
-    socket = io(serverUrl, { autoConnect: loggedIn.value })
+    socket = io(serverUrl, { autoConnect: loggedIn.value, auth: { userId } })
+    console.log(socket);
+    nuxtApp.provide('socket', socket)
 
     const snackbar = useSnackbar()
     socket.on("connect_error", (error) => {
@@ -33,9 +35,7 @@ export default defineNuxtPlugin((nuxtApp) => {
             socket.connect()
             return
         }
-        if(socket.connected)
+        if(socket.connected && !newVal)
             socket.disconnect()
     })
-
-    nuxtApp.provide('socket', socket)
 })

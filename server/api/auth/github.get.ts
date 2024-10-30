@@ -15,7 +15,7 @@ export default defineOAuthGitHubEventHandler({
                         avatarUrl: user.avatar_url
                     }
                 })
-                await setUserSession(event, { userInstance })
+                await setUserSession(event, { user: userInstance })
                 return sendRedirect(event, '/')
             } catch (error) {
                 return sendRedirect(event, '/login')

@@ -1,14 +1,18 @@
 <script setup lang="ts">
-  import { io } from 'socket.io-client';
-  const socket = io()
-  const { session } = useUserSession()
-  console.log(session);
+  //import { io } from 'socket.io-client';
+  //const socket = io()
+  const { $socket } = useNuxtApp()
+  const { loggedIn, session } = useUserSession()
 
   const snackbar = useSnackbar()
 
   const testSocket = () => {
-    socket.emit('test-event', 'hello testing')
-    console.log(socket);
+    if(!loggedIn)
+      return
+
+    $socket.connect()
+    $socket.emit('test-event', 'hello testing')
+    console.log($socket);
     
   }
 </script>
