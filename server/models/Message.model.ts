@@ -9,7 +9,7 @@ export class Message extends Model {
     declare updatedAt: Date;
 
     static associate(models : any) {
-        this.belongsTo(models.User, { foreignKey: 'authorId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+        this.belongsTo(models.User, { foreignKey: 'authorId', onDelete: 'CASCADE', onUpdate: 'CASCADE', as: 'author' })
         this.belongsTo(models.Conversation, { foreignKey: 'conversationId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
         this.belongsTo(models.User, { foreignKey: 'receiverId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
     }

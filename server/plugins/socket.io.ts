@@ -19,6 +19,25 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
     console.log("A user connected");
     users.set(socket.handshake.session.user.id, socket.id);
 
+    socket.on('send-message', async (data) => {
+      const message = await Message.create({
+        authorId: socket.handshake.session.user.id,
+        receiverId: data.receiverId,
+        content: data.content
+      });
+
+      await message.reload({
+        include: [{
+          model: User,
+          as: 'author'
+        }]
+      });
+      const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.receiverId));
+      const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+      userSocket?.emit('message', message);
+      receiverSocket?.emit('message', message);
+    })
+
     socket.on('add-friend', async (friendEmail) => {
       try {
         const user : User = await User.findByPk(socket.handshake.session.user.id);
@@ -47,7 +66,11 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
             {authorId: socket.handshake.session.user.id, receiverId: friendId},
             {authorId: friendId, receiverId: socket.handshake.session.user.id}
           ]
-        }
+        },
+        include: [{
+          model: User,
+          as: 'author'
+        }]
       })
       const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
       userSocket?.emit('messages', messages);
@@ -57,12 +80,19 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
     socket.on('request-friends', async () => {
       try {
         const user : User = await User.findByPk(socket.handshake.session.user.id, {
-          include: {
+          include: [{
             model: User,
-            as: 'Friends'
+            as: 'Friends1'
+          },
+          {
+            model: User,
+            as: 'Friends2'
           }
+        ]
         });
-        const friends = user.Friends.map(friend => {
+        const friends = user.Friends1.concat(user.Friends2)
+
+        const mappedFriends = friends.map(friend => {
           return {
             id: friend.id,
             username: friend.username,
@@ -74,7 +104,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         console.log(users);
         console.log(users.get(socket.handshake.session.user.id));
         if(user)
-          userSocket?.emit('friends-list', friends);
+          userSocket?.emit('friends-list', mappedFriends);
         else
           userSocket?.emit('friends-list', []);
 

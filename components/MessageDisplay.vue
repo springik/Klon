@@ -16,6 +16,11 @@ const emit = defineEmits(['editMessage'])
     const editSpan = ref<HTMLElement | null>(null)
     const content = ref(props.message?.content || '')
 
+    const postTime = computed(() => {
+        const date = new Date(props.message.createdAt)
+        return `${date.getHours()}:${date.getMinutes()}`
+    })
+
     const startEditingMessage = () => {
         isBeingEdited.value = true
     }
@@ -43,6 +48,7 @@ const emit = defineEmits(['editMessage'])
 
 <template>
 <li class="py-2 px-1 flex items-center hover:bg-gray-900 relative" @contextmenu.prevent="onContextMenu">
+            <span class="mb-1 mx-1">{{ postTime }}</span>
             <div>
                 <UAvatar :src="message.author.avatarUrl" :alt="message.author.name" />
             </div>

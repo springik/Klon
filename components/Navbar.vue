@@ -4,8 +4,8 @@
     const windowWidth = ref(window.innerWidth)
     const mobileBreakpoint = 992
 
-    const logout = () => {
-        clear()
+    const logout = async () => {
+        await clear()
         window.location.href = "/login"
     }
     const navItems = [
