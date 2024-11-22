@@ -185,6 +185,26 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         console.error(error);
       }
     })
+    socket.on('request-servers', async () => {
+      try {
+        const user : User | null = await User.findByPk(socket.handshake.session.user.id, {
+          include: [{
+            model: ServerModel,
+            as: 'ServerMemberships',
+          }]
+        })
+        if(!user)
+          return
+        
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        if(userSocket)
+          userSocket.emit('server-list', user.ServerMemberships);
+        
+      } catch (error) {
+        console.error(error);
+      }
+    })
+
     socket.on('test-event', (data) => {
         console.log(data);
     })
