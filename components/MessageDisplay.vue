@@ -1,84 +1,85 @@
 <script setup lang="ts">
-import type { c } from '@vite-pwa/assets-generator/dist/shared/assets-generator.5e51fd40.mjs';
-import { useMouse, useWindowScroll } from '@vueuse/core'
 
 const props = defineProps({
     message: Object
 })
-const emit = defineEmits(['editMessage'])
+const emit = defineEmits(['editMessage', 'deleteMessage'])
 
-    const { x, y } = useMouse()
-    const { y: windowY } = useWindowScroll()
+    const { session } = useUserSession()
 
-    const isOpen = ref(false)
-    const virtualElement = ref({ getBoundingClientRect: () => ({}) })
     const isBeingEdited = ref(false)
-    const editSpan = ref<HTMLElement | null>(null)
-    const content = ref(props.message?.content || '')
+    const messageValue = ref(props.message?.content || '')
+    const previousMessage = ref('')
 
     const postTime = computed(() => {
         const date = new Date(props.message.createdAt)
         return `${date.getHours()}:${date.getMinutes()}`
     })
+    const editedTime = computed(() => {
+        const date = new Date(props.message.updatedAt)
+        return `Edited: ${date.getHours()}:${date.getMinutes()}`
+    })
+    const edited = computed(() => {
+        return props.message.updatedAt > props.message.createdAt
+    })
+    const messageColor = computed(() => {
+        return props.message.author.id === session.value.user.id ? 'bg-primary-400 dark:bg-primary-800' : 'bg-gray-400 dark:bg-gray-800'
+    })
 
     const startEditingMessage = () => {
+        previousMessage.value = unref(messageValue)
         isBeingEdited.value = true
     }
     const editMessage = () => {
         isBeingEdited.value = false
-        console.log(editSpan.value?.innerText);
 
-        emit('editMessage', props.message?.id, editSpan.value?.innerText)
+        emit('editMessage', props.message?.id, messageValue.value)
+    }
+    const stopEditing = () => {
+        isBeingEdited.value = false
+        messageValue.value = unref(previousMessage)
+    }
+    const deleteMessage = () => {
+        console.log('Deleting message');
+        emit('deleteMessage', props.message.id)
     }
 
-    const onContextMenu = () => {
-        const top = unref(y) - unref(windowY)
-        const left = unref(x)
+    onMounted(() => {
+        //console.log(session.value.user);
+    })
 
-        virtualElement.value.getBoundingClientRect = () => ({
-            top,
-            left,
-            width: 0,
-            height: 0
-        })
-
-        isOpen.value = true
-    }
 </script>
 
 <template>
-<li class="py-2 px-1 flex items-center hover:bg-gray-900 relative" @contextmenu.prevent="onContextMenu">
-            <span class="mb-1 mx-1">{{ postTime }}</span>
-            <div>
+<li class="py-2 px-1 flex items-center hover:bg-gray-900 relative">
+    <UCard :ui="{ divide: 'dark:divide-none divide-none divide-transparent divide-y-0', base: 'border-none', body: { padding: 'px-1 py-1 sm:p-2' }, header: { padding: 'px-1 py-1 sm:p-2' }, footer: { padding: 'px-1 py-1 sm:p-2' }, background: 'bg-transparent dark:bg-transparent', ring: 'dark:ring-transparent ring-transparent' }">
+        <template #header>
+            <div class="flex items-center">
                 <UAvatar :src="message.author.avatarUrl" :alt="message.author.name" />
-            </div>
-            <span class="text-white antialiased font-semibold ml-2 text-center mb-1">
-                    {{ message.author.name }}
-            </span>
-            <div class="ml-2 lg:ml-1.5 rounded-3xl bg-green-400 text-center max-w-[80%] lg:min-w-20">
-                <span class="break-words px-3 py-1.5 text-black antialiased font-medium w-full">
-                    <span ref="editSpan" :contenteditable="isBeingEdited" class="whitespace-pre-wrap indent-0 text-center m-0 p-0 inline-block">
-                        {{ message.content }}
-                    </span>
-                    <UButton v-if="isBeingEdited" @click="editMessage" variant="soft" class="absolute right-0">
-                        <span class="text-white">
-                            Finish Editing
-                        </span>
-                    </UButton>
+                <span class="text-white antialiased font-semibold ml-2 text-center mb-1">
+                    {{ message.author.username }}
                 </span>
             </div>
-
-            <UContextMenu v-model="isOpen" :virtual-element="virtualElement" class="p-4 z-10">
-                <UButton label="Edit" @click="startEditingMessage()"></UButton>
-                <UButton label="Delete"></UButton>
-                <UButton label="Close"></UButton>
-            </UContextMenu>
+        </template>
+        <UTextarea :resize="false" autoresize :disabled="!isBeingEdited"  :model-modifiers="{ trim: true }" :padded="true" variant="none" :ui="{ base: messageColor }" v-model="messageValue"/>
+        <template #footer>
+            <div class="flex justify-between items-center lg:gap-2">
+                <span class="mb-1 mx-1 text-white">{{ postTime }}</span>
+                <span v-show="edited" class="mb-1 mx-1 lg:mx-2 text-nowrap font-light">{{ editedTime }}</span>
+                <div class="gap-2 flex">
+                <UButton label="Edit" v-if="session.user.id == message.author.id">
+                    <UIcon class="w-5 h-5" name="si:edit-simple-line" />
+                </UButton>
+                <UButton label="Save" v-if="session.user.id == message.author.id && isBeingEdited">
+                    <UIcon class="w-5 h-5" name="si:check-fill" />
+                </UButton>
+                <UButton v-if="session.user.id == message.author.id && isBeingEdited" @click="stopEditing">Cancel</UButton>
+                <UButton label="Delete" @click="deleteMessage" v-if="session.user.id == message.author.id">
+                    <UIcon class="w-5 h-5" name="si:archive-alt-line" />
+                </UButton>
+                </div>
+            </div>
+        </template>
+    </UCard>
         </li>
 </template>
-
-<style>
-[contenteditable="true"] {
-    outline: none;
-    cursor: text;
-}
-</style>

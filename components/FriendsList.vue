@@ -16,6 +16,11 @@
         console.log('Add friend')
         $socket.emit('add-friend', friendEmail.value)
     }
+    const removeFriend = (friendId : string) => {
+        console.log('Remove friend')
+        $socket.emit('remove-friend', friendId)
+        friends.value = friends.value.filter(friend => friend.id !== friendId)
+    }
 
     onMounted(async () => {
         console.log($socket.id);
@@ -38,7 +43,9 @@
 
 <template>
     <div class="p-4 border-l border-gray-700 w-full h-full">
-        <h2 class="text-white text-lg font-semibold mb-2">Friends <UButton @click="isOpen = true">Add</UButton></h2>
+        <h2 class="text-white text-lg font-semibold mb-2">Friends <UButton @click="isOpen = true" label="Add">
+            <UIcon class="w-5 h-5" name="si:add-circle-line" />
+        </UButton></h2>
         <ul>
         <UModal v-model="isOpen">
             <UCard>
@@ -51,13 +58,19 @@
                 </template>
             </UCard>
         </UModal>
-            <li v-for="friend in friends" :key="friend.id" class="py-2 border-b border-gray-500 last:border-b-0 flex items-center cursor-pointer" @click.prevent="onFriendClick(friend)">
-                <!--<UChip inset position="bottom-left" size="md" :color="friend.online ? 'green' : 'red'">-->
-                    <UAvatar :src="friend.avatarUrl" :alt="friend.username +'s Avatar'" />
-                <!--</UChip>-->
-                <span class="text-white antialiased font-semibold ml-2 text-center mb-1">
-                    {{ friend.username }}
-                </span>
+            <li v-for="friend in friends" :key="friend.id" class="py-2 border-b border-gray-500 last:border-b-0 flex items-center justify-between lg:justify-normal lg:gap-4 cursor-pointer" @click.prevent="onFriendClick(friend)">
+                <div class="flex items-center justify-center">
+                        <!--<UChip inset position="bottom-left" size="md" :color="friend.online ? 'green' : 'red'">-->
+                            <UAvatar :src="friend.avatarUrl" :alt="friend.username +'s Avatar'" />
+                    <!--</UChip>-->
+                    <span class="text-white antialiased font-semibold ml-2 text-center mb-1.5">
+                        {{ friend.username }}
+                    </span>
+                </div>
+                
+                <UButton label="Remove" @click.stop="removeFriend(friend.id)" variant="outline" color="red">
+                    <UIcon class="w-5 h-5" name="si:close-circle-line" />
+                </UButton>
             </li>
         </ul>
     </div>

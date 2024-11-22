@@ -5,7 +5,9 @@ import { defineEventHandler } from "h3";
 import { User } from "../models/User.model";
 import { Friendship } from "../models/FriendshipRequest.model";
 import { Message } from "../models/Message.model";
-import { Op } from "sequelize";
+import { Server as ServerModel } from "../models/Server.model";
+import { Op, where } from "sequelize";
+import { server } from "typescript";
 
 let users = new Map();
 export default defineNitroPlugin((nitroApp: NitroApp) => {
@@ -37,16 +39,58 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       userSocket?.emit('message', message);
       receiverSocket?.emit('message', message);
     })
+    socket.on('edit-message', async (data) => {
+      const message = await Message.findByPk(data.messageId);
+      console.log(data);
+      
+      if(message) {
+        message.content = data.newContent;
+        await message.save();
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        userSocket?.emit('message-edited', message);
+        const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(message.receiverId));
+        receiverSocket?.emit('message-edited', message)
+      }
+    })
+    socket.on('delete-message', async (messageId) => {
+      console.log('Got delete message request');
+      
+      try {
+        const message = await Message.findByPk(messageId);
+        console.log(message);
+      
+        if(message) {
+          await message.destroy();
+          const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+          userSocket?.emit('message-deleted', messageId);
+          const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(message.receiverId));
+          receiverSocket?.emit('message-deleted', messageId);
+        }
+      } catch (error) {
+        console.error(error);
+        //const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        //userSocket?.emit('error', messageId);
+      }
+
+    })
 
     socket.on('add-friend', async (friendEmail) => {
       try {
         const user : User = await User.findByPk(socket.handshake.session.user.id);
         const friend : User = await User.findOne({where: {email: friendEmail}});
-        if(!friend) {
-          const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
-          userSocket?.emit('friend-added', friend);
+        if(!friend)
           return
-        }
+
+        const existingFriendship = await Friendship.findOne({
+          where: {
+            [Op.or]: [
+              {firstFriendId: user.id, secondFriendId: friend.id},
+              {firstFriendId: friend.id, secondFriendId: user.id}
+            ]
+          }
+        })
+        if(existingFriendship)
+          return
 
         await Friendship.create({firstFriendId: user.id, secondFriendId: friend.id});
         const friendSocket : Socket | undefined = io.sockets.sockets.get(users.get(friend.id));
@@ -57,6 +101,35 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
         userSocket.emit('friend-added', {success: false, message: 'An error occurred'});
       }
+    })
+    socket.on('remove-friend', async (friendId) => {
+      const transaction = await sequelize.transaction()
+      try {
+        await Friendship.destroy({
+          where: {
+            [Op.or]: [
+              {firstFriendId: socket.handshake.session.user.id, secondFriendId: friendId},
+              {firstFriendId: friendId, secondFriendId: socket.handshake.session.user.id}
+            ]
+          },
+          transaction
+        });
+        await Message.destroy({
+          where: {
+            [Op.or]: [
+              {authorId: socket.handshake.session.user.id, receiverId: friendId},
+              {authorId: friendId, receiverId: socket.handshake.session.user.id}
+            ]
+          },
+          transaction
+        })
+
+        await transaction.commit();
+      } catch (error) {
+        console.error(error);
+        await transaction.rollback();
+      }
+      
     })
 
     socket.on('request-messages', async (friendId) => {
