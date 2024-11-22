@@ -1,5 +1,5 @@
 <script setup>
-//
+
 </script>
 
 <template>
@@ -8,7 +8,9 @@
     <NuxtLoadingIndicator />
     <NuxtLayout>
       <NuxtPage />
+      <NuxtSnackbar />
     </NuxtLayout>
+
   </div>
 
 </template>
