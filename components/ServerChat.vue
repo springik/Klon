@@ -1,67 +1,61 @@
 <script setup lang="ts">
     const props = defineProps({
-        friend: Object
+        conversation: Object
     })
     const messages = ref([])
     const messageInput = ref('')
     const loading = ref<boolean>(false)
-    
-    const emit = defineEmits(['goBack'])
 
     const { $socket } = useNuxtApp()
 
     const sortedMessages = computed(() => {
-        return messages.value.sort((a, b) => {
+        if(!props.conversation)
+            return []
+        if(!props.conversation.messages || props.conversation.messages.length === 0)
+            return []
+        return props?.conversation?.messages.sort((a, b) => {
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         })
     })
 
-    const goBack = () => {
-        emit('goBack')
-    }
     const sendMessage = () => {
         console.log("sending message");
         loading.value = true
         if(messageInput.value === '')
             return
-        $socket.emit('send-message', { content: messageInput.value, receiverId: props.friend.id, conversationId: null })
+        $socket.emit('send-message', { content: messageInput.value, conversationId: props.conversation.id, receiverId: null })
         messageInput.value = ''
     }
     const onEditMessage = (messageId: string, newContent: string) => {
-        const message = messages.value.find(m => m.id === messageId)
+        const message = props.conversation?.messages.find(m => m.id === messageId)
         message.content = newContent
         $socket.emit('edit-message', { messageId, newContent })
     }
     const onDeleteMessage = (messageId: string) => {
-        messages.value = messages.value.filter(m => m.id !== messageId)
+        props.conversation.messages = props.conversation.messages.filter(m => m.id !== messageId)
         console.log('Deleting message');
         $socket.emit('delete-message', messageId)
     }
 
     onMounted(() => {
-        $socket.on('messages', (data) => {
-            console.log(data);
-            messages.value = data
-            console.log('Received messages');
-        })
         $socket.on('message', (message) => {
-            loading.value = false
             console.log(message);
-            messages.value.push(message)
+            if(message.conversationId !== props.conversation.id)
+                return
+            props.conversation.messages.push(message)
+            loading.value = false
         })
         $socket.on('message-deleted', (messageId) => {
-            messages.value = messages.value.filter(m => m.id !== messageId)
+            props.conversation.messages = messages.value.filter(m => m.id !== messageId)
         })
         $socket.on('message-edited', (message) => {
-            const index = messages.value.findIndex(m => m.id === message.id)
-            messages.value[index].content = message.content
-            messages.value[index].updatedAt = message.updatedAt
+            const index = props.conversation.messages.findIndex(m => m.id === message.id)
+            props.conversation.messages[index].content = message.content
+            props.conversation.messages[index].updatedAt = message.updatedAt
         })
-        $socket.emit('request-messages', props.friend.id)
     })
 
     onBeforeUnmount(() => {
-        $socket.off('messages')
         $socket.off('message')
         $socket.off('message-deleted')
         $socket.off('message-edited')
@@ -69,13 +63,10 @@
 </script>
 
 <template>
-    <UContainer v-if="friend" class="border-l border-gray-700 w-full h-full relative">
-        <div class="z-10 flex items-start justify-items-center mb-2 gap-x-2 fixed mt-2 lg:mt-0 backdrop-blur-sm p-4">
-            <UButton size="md" label="Go back" :ui="{ rounded: 'rounded-full' }" @click="goBack">
-                <UIcon class="w-5 h-5" name="si:arrow-left-circle-line" />
-            </UButton>
+    <UContainer v-if="conversation" class="w-full h-full relative">
+        <div class="z-10 flex items-start justify-items-center mb-2 gap-x-2 fixed mt-2 lg:mt-0 ml-8 p-4">
             <h3 class="mt-1">
-                    Chat with {{ friend.username  }}
+                    Chat with {{ conversation.name  }}
             </h3>
         </div>
         <ul class="flex flex-col-reverse h-5/6 overflow-y-auto">

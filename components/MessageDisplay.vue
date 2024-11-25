@@ -67,13 +67,15 @@ const emit = defineEmits(['editMessage', 'deleteMessage'])
                 <span class="mb-1 mx-1 text-white">{{ postTime }}</span>
                 <span v-show="edited" class="mb-1 mx-1 lg:mx-2 text-nowrap font-light">{{ editedTime }}</span>
                 <div class="gap-2 flex">
-                <UButton label="Edit" v-if="session.user.id == message.author.id">
+                <UButton @click="startEditingMessage" label="Edit" v-if="session.user.id == message.author.id && !isBeingEdited">
                     <UIcon class="w-5 h-5" name="si:edit-simple-line" />
                 </UButton>
-                <UButton label="Save" v-if="session.user.id == message.author.id && isBeingEdited">
+                <UButton @click="editMessage" label="Save" v-if="session.user.id == message.author.id && isBeingEdited">
                     <UIcon class="w-5 h-5" name="si:check-fill" />
                 </UButton>
-                <UButton v-if="session.user.id == message.author.id && isBeingEdited" @click="stopEditing">Cancel</UButton>
+                <UButton @click="stopEditing" label="Cancel" v-if="session.user.id == message.author.id && isBeingEdited">
+                    <UIcon class="w-5 h-5" name="si:close-circle-line" />
+                </UButton>
                 <UButton label="Delete" @click="deleteMessage" v-if="session.user.id == message.author.id">
                     <UIcon class="w-5 h-5" name="si:archive-alt-line" />
                 </UButton>

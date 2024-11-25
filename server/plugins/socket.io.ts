@@ -6,8 +6,9 @@ import { User } from "../models/User.model";
 import { Friendship } from "../models/FriendshipRequest.model";
 import { Message } from "../models/Message.model";
 import { Server as ServerModel } from "../models/Server.model";
-import { Op, where } from "sequelize";
-import { server } from "typescript";
+import { Op, Transaction } from "sequelize";
+import { ServerMember } from "../models/ServerMember.model";
+import { Conversation } from "../models/Conversation.model";
 
 let users = new Map();
 export default defineNitroPlugin((nitroApp: NitroApp) => {
@@ -22,6 +23,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
     users.set(socket.handshake.session.user.id, socket.id);
 
     socket.on('send-message', async (data) => {
+      if(data.receiverId !== null) {
       const message = await Message.create({
         authorId: socket.handshake.session.user.id,
         receiverId: data.receiverId,
@@ -38,6 +40,37 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
       userSocket?.emit('message', message);
       receiverSocket?.emit('message', message);
+      }
+      else if(data.conversationId !== null) {
+        
+        const message = await Message.create({
+          authorId: socket.handshake.session.user.id,
+          conversationId: data.conversationId,
+          content: data.content
+        });
+
+        await message.reload({
+          include: [{
+            model: User,
+            as: 'author'
+          }]
+        });
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        userSocket?.emit('message', message);
+
+        const conversation = await Conversation.findByPk(conversationId);
+        if(conversation) {
+          const serverMembers = await ServerMember.findAll({
+            where: {
+              serverId: conversation.serverId
+            }
+          })
+          serverMembers.forEach(async (member) => {
+            const memberSocket : Socket | undefined = io.sockets.sockets.get(users.get(member.userId));
+            memberSocket?.emit('message', message);
+          })
+        }
+      }
     })
     socket.on('edit-message', async (data) => {
       const message = await Message.findByPk(data.messageId);
@@ -185,6 +218,40 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         console.error(error);
       }
     })
+
+    socket.on('create-server', async (serverData) => {
+      //TODO: HANDLE AVATAR UPLOAD
+      let transaction : Transaction | null = null
+      try {
+        transaction = await sequelize.transaction();
+        const server = await ServerModel.create({
+          name: serverData.name,
+          description: serverData.description || null,
+          avatarUrl: '/servers/default.webp',
+          ownerId: socket.handshake.session.user.id
+        , transaction});
+
+        await ServerMember.create({
+          serverId: server.id,
+          userId: socket.handshake.session.user.id
+        , transaction})
+
+        await Conversation.create({
+          serverId: server.id,
+          name: 'General'
+        , transaction})
+
+        await transaction.commit();
+
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        userSocket?.emit('server-created', server);
+      } catch (error) {
+        console.error(error);
+        if(transaction)
+          await transaction.rollback();
+      }
+    })
+
     socket.on('request-servers', async () => {
       try {
         const user : User | null = await User.findByPk(socket.handshake.session.user.id, {
@@ -204,6 +271,46 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         console.error(error);
       }
     })
+    socket.on('request-conversations', async (serverId) => {
+      try {
+        const conversations = await Conversation.findAll({
+          where: {
+            serverId
+          }
+        })
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        userSocket?.emit('conversations-list', conversations);
+      } catch (error) {
+        console.error(error);
+      }
+    })
+    socket.on('request-conversation-messages', async (conversationId : string) => {
+      try {
+        const messagesBare = await Message.findAll({
+          where: {
+            conversationId
+          }
+        })
+        const messages = await Promise.all(messagesBare.map(async (message) => {
+          await message.reload({
+            include: [{
+              model: User,
+              as: 'author'
+            }]
+          })
+          return message;
+        })
+        )
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        if(messages)
+          userSocket.emit('conversation-messages', messages);
+        else
+          userSocket.emit('conversation-messages', []);
+      } catch (error) {
+        console.error(error);
+      }
+    })
+
 
     socket.on('test-event', (data) => {
         console.log(data);

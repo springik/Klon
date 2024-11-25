@@ -3,6 +3,7 @@ import { DataTypes, Model } from "sequelize";
 export class Server extends Model {
     declare id: string;
     declare name: string;
+    declare description: string;
     declare avatarUrl: string;
     declare createdAt: Date;
     declare updatedAt: Date;
@@ -22,6 +23,10 @@ Server.init({
     name: {
         type: DataTypes.STRING,
         allowNull: false
+    },
+    description: {
+        type: DataTypes.STRING,
+        allowNull: true
     },
     avatarUrl: {
         type: DataTypes.STRING,
