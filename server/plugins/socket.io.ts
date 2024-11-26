@@ -58,7 +58,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
         userSocket?.emit('message', message);
 
-        const conversation = await Conversation.findByPk(conversationId);
+        const conversation = await Conversation.findByPk(data.conversationId);
         if(conversation) {
           const serverMembers = await ServerMember.findAll({
             where: {

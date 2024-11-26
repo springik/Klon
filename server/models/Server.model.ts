@@ -5,6 +5,7 @@ export class Server extends Model {
     declare name: string;
     declare description: string;
     declare avatarUrl: string;
+    declare ownerId: string | null;
     declare createdAt: Date;
     declare updatedAt: Date;
 

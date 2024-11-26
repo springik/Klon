@@ -1,4 +1,9 @@
 <script setup lang="ts">
+    definePageMeta({
+        title: 'Servers',
+        description: 'Servers page of the application',
+        middleware: 'auth'
+    })
 
     const selectedTab = ref('Servers')
     const selectedServer = ref<object | null>(null)

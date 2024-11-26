@@ -1,12 +1,9 @@
 <script setup lang="ts">
+    definePageMeta({
+        title: 'Login',
+        description: 'Login to the application'
+    })
     const { loggedIn } = useUserSession()
-
-    const loginWithGitHub = () => {
-        window.location.href = '/api/auth/github'
-    }
-    const loginWithGoogle = () => {
-        window.location.href = '/api/auth/google'
-    }
 </script>
 
 <template>
@@ -15,12 +12,12 @@
             <h2 class="dark:text-primary light:text-primary text-xl mb-12">
                 Please login using one of the options
             </h2>
-            <UButton size="xl" class="dark:text-black light:text-primary text-bold" v-if="!loggedIn" @click="loginWithGitHub">
+            <UButton size="xl" class="dark:text-black light:text-primary text-bold" v-if="!loggedIn" to="/api/auth/github" external>
                 <span class="text-center w-full">
                     Login with GitHub
                 </span>
             </UButton>
-            <UButton size="xl" class="dark:text-black light:text-primary text-bold" v-if="!loggedIn" @click="loginWithGoogle">
+            <UButton size="xl" class="dark:text-black light:text-primary text-bold" v-if="!loggedIn" to="/api/auth/google" external>
                 <span class="text-center w-full">
                     Login with Google
                 </span>

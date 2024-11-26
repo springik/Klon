@@ -1,4 +1,9 @@
 <script setup lang="ts">
+    definePageMeta({
+        title: 'Friends',
+        description: 'Friends page of the application',
+        middleware: 'auth'
+    })
     const selectedFriend = ref(null)
 
     const onFriendClick = (friend : object) => {
