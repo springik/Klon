@@ -67,7 +67,7 @@
 </script>
 
 <template>
-    <div class="p-4 border-l border-gray-700 w-full h-full">
+    <div class="p-4 w-full h-11/12">
         <h2 class="text-white text-lg font-semibold mb-2">Servers
             <UButton @click="isOpen = true" label="Add">
             <UIcon class="w-5 h-5" name="si:add-circle-line" />
@@ -110,15 +110,15 @@
             </UCard>
         </UModal>
         <div>
-            <ul>
-                <li @click.prevent="onSelectServer(server)" class="cursor-pointer flex flex-col" v-for="server in servers" :key="server.id">
+            <ul class="overflow-y-auto overflow-x-none">
+                <li @click.prevent="onSelectServer(server)" class=" border-l-2 border-gray-700 px-2 py-4 cursor-pointer flex flex-col hover:bg-gray-700" v-for="server in servers" :key="server.id">
                     <div class="flex items-center gap-2">
                         <UAvatar :src="server.avatarUrl" size="lg" />
-                        <h3>
+                        <h3 class="font-semibold text-primary">
                             {{ server.name }}
                         </h3>
                     </div>
-                    <h5 v-if="server.description !== '' || server.description !== null">
+                    <h5 class="font-light" v-if="server.description !== '' || server.description !== null">
                         {{ server.description }}
                     </h5>
                 </li>

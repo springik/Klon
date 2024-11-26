@@ -4,7 +4,7 @@
         description: 'Friends page of the application',
         middleware: 'auth'
     })
-    const selectedFriend = ref(null)
+    const selectedFriend = ref<object | null>(null)
 
     const onFriendClick = (friend : object) => {
         console.log("friend clicked");

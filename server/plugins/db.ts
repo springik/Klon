@@ -5,6 +5,7 @@ import { Message } from "../models/Message.model";
 import { Server } from "../models/Server.model";
 import { User } from "../models/User.model";
 import { ServerMember } from "../models/ServerMember.model";
+import { ServerInvite } from "../models/ServerInvite";
 
 export default defineNitroPlugin(async (nitro) => {
     try {
@@ -32,4 +33,5 @@ function registerModels() {
     sequelize.modelManager.addModel(FriendshipRequest)
     sequelize.modelManager.addModel(Conversation)
     sequelize.modelManager.addModel(Message)
+    sequelize.modelManager.addModel(ServerInvite)
 }

@@ -7,3 +7,6 @@ export const manageServer = defineAbility((user : User, server : Server) => {
 export const addConversation = defineAbility((user : User, server : Server) => {
     return user.id === server.ownerId
 })
+export const inviteUsers = defineAbility((user : User, server : Server) => {
+    return user.id === server.ownerId
+})

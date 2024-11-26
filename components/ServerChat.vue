@@ -6,6 +6,8 @@
     const messageInput = ref('')
     const loading = ref<boolean>(false)
 
+    const emit = defineEmits(['goBack'])
+
     const { $socket } = useNuxtApp()
 
     const sortedMessages = computed(() => {
@@ -36,6 +38,10 @@
         console.log('Deleting message');
         $socket.emit('delete-message', messageId)
     }
+    const goBack = () => {
+        console.log('going back');
+        emit('goBack')
+    }
 
     onMounted(() => {
         $socket.on('message', (message) => {
@@ -63,10 +69,13 @@
 </script>
 
 <template>
-    <UContainer v-if="conversation" class="w-full h-full relative">
-        <div class="z-10 flex items-start justify-items-center mb-2 gap-x-2 fixed mt-2 lg:mt-0 ml-8 p-4">
+    <UContainer v-if="conversation" class="w-full h-full">
+        <div class="z-10 flex items-start justify-items-center mb-2 gap-x-2 fixed lg:mt-0 p-4 backdrop-blur-sm">
+            <UButton size="md" label="Go back" :ui="{ rounded: 'rounded-full' }" @click="goBack">
+                <UIcon class="w-5 h-5" name="si:arrow-left-circle-line" />
+            </UButton>
             <h3 class="mt-1">
-                    Chat with {{ conversation.name  }}
+                    {{ conversation.name  }}
             </h3>
         </div>
         <ul class="flex flex-col-reverse h-5/6 overflow-y-auto">

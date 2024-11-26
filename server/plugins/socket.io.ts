@@ -56,7 +56,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
           }]
         });
         const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
-        userSocket?.emit('message', message);
+        //userSocket?.emit('message', message);
 
         const conversation = await Conversation.findByPk(data.conversationId);
         if(conversation) {
@@ -269,6 +269,31 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         
       } catch (error) {
         console.error(error);
+      }
+    })
+    socket.on('create-conversation', async (data) => {
+      let transaction : Transaction | null = null
+      try {
+        transaction = await sequelize.transaction();
+        const conversation = await Conversation.create({
+          serverId: data.serverId,
+          name: data.name
+        }, {transaction})
+
+        await transaction.commit();
+        const members = await ServerMember.findAll({
+          where: {
+            serverId: data.serverId
+          }
+        })
+        members.forEach(async (member) => {
+          const memberSocket : Socket | undefined = io.sockets.sockets.get(users.get(member.userId));
+          memberSocket?.emit('conversation-created', conversation);
+        })
+      } catch (error) {
+        console.error(error);
+        if(transaction)
+          await transaction.rollback();
       }
     })
     socket.on('request-conversations', async (serverId) => {

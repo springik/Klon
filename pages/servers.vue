@@ -27,7 +27,7 @@
 </script>
 
 <template>
-    <UTabs v-if="selectedServer === null" @change="onTabChange" :items="tabs">
+    <UTabs class="" v-if="selectedServer === null" @change="onTabChange" :items="tabs">
         <template #icon="{ item, selected }">
             <UIcon :name="item.icon" class="w-4 h-4 flex-shrink-0 me-2" :class="[selected && 'text-primary-500 dark:text-primary-400']" />
         </template>

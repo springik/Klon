@@ -69,8 +69,7 @@
 </script>
 
 <template>
-    <UContainer v-if="friend" class="border-l border-gray-700 w-full h-full relative">
-        <div class="z-10 flex items-start justify-items-center mb-2 gap-x-2 fixed mt-2 lg:mt-0 backdrop-blur-sm p-4">
+    <div class="z-10 flex items-start justify-items-center mb-2 gap-x-2 fixed mt-2 lg:mt-0 backdrop-blur-sm p-4">
             <UButton size="md" label="Go back" :ui="{ rounded: 'rounded-full' }" @click="goBack">
                 <UIcon class="w-5 h-5" name="si:arrow-left-circle-line" />
             </UButton>
@@ -78,6 +77,7 @@
                     Chat with {{ friend.username  }}
             </h3>
         </div>
+    <UContainer v-if="friend" class="border-l border-gray-700 w-full h-full relative">
         <ul class="flex flex-col-reverse h-5/6 overflow-y-auto">
             <MessageDisplay @deleteMessage="onDeleteMessage" @editMessage="onEditMessage" v-for="message in sortedMessages"  :message="message" :key="message.id"></MessageDisplay>
         </ul>
