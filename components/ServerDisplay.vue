@@ -118,7 +118,6 @@
 </script>
 
 <template>
-    <div>
     <div class="relative">
         <div class="absolute left-0 right-0 top-0">
             <div v-if="selectedConversation === null" class="z-10 flex items-start justify-items-center mb-2 gap-x-2 fixed mt-2 lg:mt-0 backdrop-blur-sm p-4">
@@ -198,5 +197,4 @@
         </UModal>
         </Can>
     </UContainer>
-    </div>
 </template>
