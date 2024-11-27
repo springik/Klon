@@ -17,7 +17,7 @@
             const response = await $fetch('/api/friends/url', {
                     method: 'GET'
                 })
-                friendLink.value = response.body.url
+                friendLink.value = response?.body?.url
         } catch (error) {
             console.error(error);
             friendLink.value = ''

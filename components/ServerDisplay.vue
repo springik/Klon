@@ -94,7 +94,7 @@
                         serverId: props.server.id
                     }
                 })
-                inviteLink.value = response.body.url
+                inviteLink.value = response?.body?.url
             }
             else {
                 inviteLink.value = ''
@@ -118,6 +118,7 @@
 </script>
 
 <template>
+    <div>
     <div class="relative">
         <div class="absolute left-0 right-0 top-0">
             <div v-if="selectedConversation === null" class="z-10 flex items-start justify-items-center mb-2 gap-x-2 fixed mt-2 lg:mt-0 backdrop-blur-sm p-4">
@@ -140,7 +141,7 @@
         </div>
         </div>
         <Can :ability="inviteUsers" :args="[props.server]">
-        <div class="flex flex-col pb-2 pt-6">
+        <div v-if="!selectedConversation" class="flex flex-col pb-2 pt-6">
             <h3 class="text-lg">
                 Invite new members
             </h3>
@@ -197,4 +198,5 @@
         </UModal>
         </Can>
     </UContainer>
+    </div>
 </template>

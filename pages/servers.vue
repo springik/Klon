@@ -27,12 +27,6 @@
 </script>
 
 <template>
-    <UTabs class="" v-if="selectedServer === null" @change="onTabChange" :items="tabs">
-        <template #icon="{ item, selected }">
-            <UIcon :name="item.icon" class="w-4 h-4 flex-shrink-0 me-2" :class="[selected && 'text-primary-500 dark:text-primary-400']" />
-        </template>
-    </UTabs>
-
     <ServerList @serverSelected="onServerSelected" v-if="selectedTab === 'Servers' && selectedServer === null" />
     <ServerDisplay @goBack="selectedServer = null" :server="selectedServer"v-else-if="selectedTab === 'Servers' && selectedServer !== null" />
     <ServerRequestsList v-if="selectedTab === 'Requests'" />

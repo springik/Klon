@@ -5,6 +5,8 @@
     const messages = ref([])
     const messageInput = ref('')
     const loading = ref<boolean>(false)
+    const messageAttachments = ref<{ file : File, name : string, extension : string }[] | null>(null)
+    const fileInput = ref<HTMLInputElement | null>(null)
 
     const emit = defineEmits(['goBack'])
 
@@ -25,8 +27,25 @@
         loading.value = true
         if(messageInput.value === '')
             return
-        $socket.emit('send-message', { content: messageInput.value, conversationId: props.conversation.id, receiverId: null })
+        $socket.emit('send-message', { content: messageInput.value, conversationId: props.conversation.id, receiverId: null, attachment: messageAttachments.value })
         messageInput.value = ''
+        messageAttachments.value = null
+    }
+    const addAttachment = () => {
+        fileInput.value?.click()
+    }
+    const removeAttachment = (name: string) => {
+        messageAttachments.value = unref(messageAttachments)?.filter(f => f.name !== name) || null
+    }
+    const handleFileChange = (event: Event) => {
+        const input = event.target as HTMLInputElement
+        if(input.files && input.files.length > 0) {
+            messageAttachments.value = Array.from(input.files).map(file => ({
+            file,
+            name: file.name.split('.').slice(0, -1).join('.'),
+            extension: file.name.split('.').pop() || ''
+            }));
+        }
     }
     const onEditMessage = (messageId: string, newContent: string) => {
         const message = props.conversation?.messages.find(m => m.id === messageId)
@@ -81,8 +100,25 @@
         <ul class="flex flex-col-reverse h-5/6 overflow-y-auto">
             <MessageDisplay @deleteMessage="onDeleteMessage" @editMessage="onEditMessage" v-for="message in sortedMessages"  :message="message" :key="message.id"></MessageDisplay>
         </ul>
-        <UContainer class="w-11/12 lg:w-full mb-2">
+        <UContainer class="w-11/12 lg:w-full mb-2 relative">
+            <div v-if="messageAttachments && messageAttachments.length > 0" class="mb-2 absolute lg:bottom-[3rem] bottom-[3rem] left-0 w-full bg-gray-800 p-2 rounded-lg z-10">
+                <h4 class="text-white text-md">Attachments:</h4>
+                <ul class="overflow-y-auto">
+                    <li v-for="file in messageAttachments" :key="file.name" class="text-white flex flex-row">
+                        <span>
+                            {{ file.name + '.' +file.extension }}
+                        </span>
+                        <UButton @click="removeAttachment(file.name)" variant="ghost" label="Remove">
+                            <UIcon name="si:close-circle-line" />
+                        </UButton>
+                    </li>
+                </ul>
+            </div>
             <div class="flex">
+                <UButton @click="addAttachment" label="Add attachment">
+                    <UIcon class="w-5 h-5" name="si:add-circle-line" />
+                </UButton>
+                <input multiple type="file" ref="fileInput" class="hidden" @change="handleFileChange">
                 <UTextarea autoresize v-model="messageInput" class="w-full" :rows="1" size="xl" :maxrows="3" placeholder="Chat..." variant="outline" :model-modifiers="{ trim: true }"/>
                 <UButton :loading="loading" class="cursor-pointer" label="Send message" size="md" @click="sendMessage">
                     <UIcon class="w-5 h-5" name="si:north-east-circle-line" />

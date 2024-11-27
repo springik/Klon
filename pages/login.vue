@@ -1,4 +1,5 @@
 <script setup lang="ts">
+
     definePageMeta({
         title: 'Login',
         description: 'Login to the application'
@@ -12,6 +13,7 @@
             <h2 class="dark:text-primary light:text-primary text-xl mb-12">
                 Please login using one of the options
             </h2>
+            <ClientOnly>
             <UButton size="xl" class="dark:text-black light:text-primary text-bold" v-if="!loggedIn" to="/api/auth/github" external>
                 <span class="text-center w-full">
                     Login with GitHub
@@ -22,6 +24,7 @@
                     Login with Google
                 </span>
             </UButton>
+            </ClientOnly>
         </UContainer>
     </UContainer>
 </template>

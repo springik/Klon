@@ -83,5 +83,5 @@ const emit = defineEmits(['editMessage', 'deleteMessage'])
             </div>
         </template>
     </UCard>
-        </li>
+</li>
 </template>

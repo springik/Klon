@@ -86,7 +86,7 @@
 
                     <label for="serverAvatar">Avatar:</label>
                     <!--<UInput @change="onAvatarChange" name="serverAvatar" type="file" class="lg:px-3 px-2 py-2" />-->
-                    <input @change="onAvatarChange" type="file" name="serverAvatar" class="lg:px-3 px-2 py-2">
+                    <input @change="onAvatarChange" accept="image/webp, image/jpeg, image/png" type="file" name="serverAvatar" class="lg:px-3 px-2 py-2">
                 </div>
                 <UDivider v-if="serverName != '' || serverDescription != '' || serverAvatar != ''" label="Preview" />
                 

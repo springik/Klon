@@ -17,6 +17,6 @@
 </script>
 
 <template>
-    <FriendChat v-if="selectedFriend !== null" @goBack="onGoBack" :friend="selectedFriend" />
-    <FriendsList v-else @friendClicked="onFriendClick" />
+        <FriendChat v-if="selectedFriend !== null" @goBack="onGoBack" :friend="selectedFriend" />
+        <FriendsList v-else @friendClicked="onFriendClick" />
 </template>
