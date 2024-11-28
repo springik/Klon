@@ -21,5 +21,9 @@ export default defineOAuthGitHubEventHandler({
                 console.error(error)
                 return sendRedirect(event, '/login')
             }
+        },
+        onError(event, error) {
+            console.error(error)
+            return sendRedirect(event, '/login')
         }
     })

@@ -5,6 +5,16 @@
         description: 'Login to the application'
     })
     const { loggedIn } = useUserSession()
+
+    const redirectToGitHub = () => {
+        //window.location.href = 'http://localhost:3000/api/auth/github'
+        navigateTo('/api/auth/github', { external: true })
+    }
+
+    const redirectToGoogle = () => {
+        //window.location.href = 'http://localhost:3000/api/auth/google'
+        navigateTo('/api/auth/google', { external: true })
+    }
 </script>
 
 <template>
@@ -13,18 +23,8 @@
             <h2 class="dark:text-primary light:text-primary text-xl mb-12">
                 Please login using one of the options
             </h2>
-            <ClientOnly>
-            <UButton size="xl" class="dark:text-black light:text-primary text-bold" v-if="!loggedIn" to="/api/auth/github" external>
-                <span class="text-center w-full">
-                    Login with GitHub
-                </span>
-            </UButton>
-            <UButton size="xl" class="dark:text-black light:text-primary text-bold" v-if="!loggedIn" to="/api/auth/google" external>
-                <span class="text-center w-full">
-                    Login with Google
-                </span>
-            </UButton>
-            </ClientOnly>
+            <UButton external v-if="!loggedIn" size="xl" class="dark:text-black light:text-primary text-bold" @click="redirectToGitHub" label="Login With Github" block />
+            <UButton external v-if="!loggedIn" size="xl" class="dark:text-black light:text-primary text-bold" @click="redirectToGoogle" label="Login With Google" block />
         </UContainer>
     </UContainer>
 </template>
