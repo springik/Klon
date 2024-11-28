@@ -6,8 +6,12 @@ import { User } from "../models/User.model";
 import { Friendship } from "../models/FriendshipRequest.model";
 import { Message } from "../models/Message.model";
 import { Server as ServerModel } from "../models/Server.model";
-import { Op, where } from "sequelize";
-import { server } from "typescript";
+import { Op, Transaction } from "sequelize";
+import { ServerMember } from "../models/ServerMember.model";
+import { Conversation } from "../models/Conversation.model";
+import { FileManager } from "../utils/FileManager";
+import { MessageAttachment } from "../models/MessageAttachment.model";
+import { log } from "console";
 
 let users = new Map();
 export default defineNitroPlugin((nitroApp: NitroApp) => {
@@ -22,22 +26,107 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
     users.set(socket.handshake.session.user.id, socket.id);
 
     socket.on('send-message', async (data) => {
-      const message = await Message.create({
-        authorId: socket.handshake.session.user.id,
-        receiverId: data.receiverId,
-        content: data.content
-      });
+      let transaction : Transaction | null = null;
+      try {
+        transaction = await sequelize.transaction();
+        //console.log(data);
+        if(data.receiverId !== null) {
+          const message = await Message.create({
+          authorId: socket.handshake.session.user.id,
+          receiverId: data.receiverId,
+          content: data.content
+          , transaction
+        });
+        log(message);
 
-      await message.reload({
-        include: [{
-          model: User,
-          as: 'author'
-        }]
-      });
-      const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.receiverId));
-      const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
-      userSocket?.emit('message', message);
-      receiverSocket?.emit('message', message);
+        if(data.attachment) {
+          //const attachments : MessageAttachment[] = [];
+          data.attachment.forEach(async (attachment : { file : Buffer, name : string, extension : string }) => {
+            const attachmentPath = `/attachments/${attachment.name}.${attachment.extension}`;
+            await FileManager.saveFile(attachmentPath, attachment.file);
+            /*const messageAttachment =*/ await MessageAttachment.create({
+              messageId: message.dataValues.id,
+              contentUrl: attachmentPath
+            , transaction
+            })
+            //attachments.push(messageAttachment);
+          })
+        }
+        
+        await transaction.commit();
+
+        await message.reload({
+          include: [{
+            model: User,
+            as: 'author'
+          }, {
+            model: MessageAttachment,
+            as: 'attachments'
+          }]
+        });
+
+        const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.receiverId));
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        userSocket?.emit('message', message);
+        receiverSocket?.emit('message', message);
+        }
+        else if(data.conversationId !== null) {
+          
+          const message = await Message.create({
+            authorId: socket.handshake.session.user.id,
+            conversationId: data.conversationId,
+            content: data.content
+          , transaction});
+          log(message);
+
+          if(data.attachment) {
+            const attachments : MessageAttachment[] = [];
+            data.attachment.forEach(async (attachment : { file : Buffer, name : string, extension : string }) => {
+              const attachmentPath = `/attachments/${attachment.name}.${attachment.extension}`;
+              await FileManager.saveFile(attachmentPath, attachment.file);
+              const messageAttachment = await MessageAttachment.create({
+                messageId: message.dataValues.id,
+                contentUrl: attachmentPath
+              , transaction
+              })
+              attachments.push(messageAttachment);
+            })
+          }
+
+          await transaction.commit();
+  
+          await message.reload({
+            include: [{
+              model: User,
+              as: 'author'
+            }, {
+              model: MessageAttachment,
+              as: 'attachments'
+            }]
+          });
+          //console.log(message);
+          
+          //const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+          //userSocket?.emit('message', message);
+  
+          const conversation = await Conversation.findByPk(data.conversationId);
+          if(conversation) {
+            const serverMembers = await ServerMember.findAll({
+              where: {
+                serverId: conversation.serverId
+              }
+            })
+            serverMembers.forEach(async (member) => {
+              const memberSocket : Socket | undefined = io.sockets.sockets.get(users.get(member.userId));
+              memberSocket?.emit('message', message);
+            })
+          }
+        }
+      } catch (error) {
+        console.error(error);
+        if(transaction)
+          await transaction.rollback();
+      }
     })
     socket.on('edit-message', async (data) => {
       const message = await Message.findByPk(data.messageId);
@@ -143,6 +232,9 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         include: [{
           model: User,
           as: 'author'
+        }, {
+          model: MessageAttachment,
+          as: 'attachments'
         }]
       })
       const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
@@ -185,6 +277,46 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         console.error(error);
       }
     })
+
+    socket.on('create-server', async (serverData) => {
+      let transaction : Transaction | null = null
+      try {
+        transaction = await sequelize.transaction();
+
+        let avatarUrl = '/servers/default.webp';
+        if(serverData.avatar) {
+          const avatarPath = `/servers/avatars/${serverData.name}.webp`
+          await FileManager.saveFile(avatarPath, serverData.avatar);
+          avatarUrl = `${avatarPath}`
+        }
+        const server = await ServerModel.create({
+          name: serverData.name,
+          description: serverData.description || null,
+          avatarUrl: avatarUrl,
+          ownerId: socket.handshake.session.user.id
+        , transaction});
+
+        await ServerMember.create({
+          serverId: server.id,
+          userId: socket.handshake.session.user.id
+        , transaction})
+
+        await Conversation.create({
+          serverId: server.id,
+          name: 'General'
+        , transaction})
+
+        await transaction.commit();
+
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        userSocket?.emit('server-created', server);
+      } catch (error) {
+        console.error(error);
+        if(transaction)
+          await transaction.rollback();
+      }
+    })
+
     socket.on('request-servers', async () => {
       try {
         const user : User | null = await User.findByPk(socket.handshake.session.user.id, {
@@ -204,6 +336,101 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         console.error(error);
       }
     })
+    socket.on('create-conversation', async (data) => {
+      let transaction : Transaction | null = null
+      try {
+        transaction = await sequelize.transaction();
+        const conversation = await Conversation.create({
+          serverId: data.serverId,
+          name: data.name
+        }, {transaction})
+
+        await transaction.commit();
+        const members = await ServerMember.findAll({
+          where: {
+            serverId: data.serverId
+          }
+        })
+        members.forEach(async (member) => {
+          const memberSocket : Socket | undefined = io.sockets.sockets.get(users.get(member.userId));
+          memberSocket?.emit('conversation-created', conversation);
+        })
+      } catch (error) {
+        console.error(error);
+        if(transaction)
+          await transaction.rollback();
+      }
+    })
+    socket.on('request-conversations', async (serverId) => {
+      try {
+        const conversations = await Conversation.findAll({
+          where: {
+            serverId
+          }
+        })
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        userSocket?.emit('conversations-list', conversations);
+      } catch (error) {
+        console.error(error);
+      }
+    })
+    socket.on('request-conversation-messages', async (conversationId : string) => {
+      try {
+        const messagesBare = await Message.findAll({
+          where: {
+            conversationId
+          }
+        })
+        const messages = await Promise.all(messagesBare.map(async (message) => {
+          await message.reload({
+            include: [{
+              model: User,
+              as: 'author'
+            }, {
+              model: MessageAttachment,
+              as: 'attachments'
+            }]
+          })
+          return message;
+        })
+        )
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        if(messages)
+          userSocket.emit('conversation-messages', messages);
+        else
+          userSocket.emit('conversation-messages', []);
+      } catch (error) {
+        console.error(error);
+      }
+    })
+    socket.on('update-user-avatar', async (newAvatar) => {
+    
+    let transaction : Transaction | null = null
+    try {
+        transaction = await sequelize.transaction()
+        const avatarPath = `/users/avatars/${newAvatar.name}`
+
+        const user = socket.handshake.session.user
+        const userInstance = await User.findByPk(user.id, { transaction })
+        if(!userInstance) {
+            throw new Error('User Instance not found error')
+        }
+        userInstance.avatarUrl = avatarPath
+        user.avatarUrl = avatarPath
+        
+        await FileManager.saveFile(avatarPath, newAvatar.file)
+        await userInstance?.save({ transaction })
+        await transaction.commit()
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        userSocket?.emit('avatar-changed', { status: '200', message: 'Avatar updated', newUrl: avatarPath })
+    } catch (error) {
+        console.error(error)
+        if(transaction)
+            await transaction.rollback()
+        //return createError({ status: 500, statusMessage: 'Something went wrong' })
+    }
+    })
+
 
     socket.on('test-event', (data) => {
         console.log(data);

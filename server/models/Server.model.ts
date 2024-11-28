@@ -3,13 +3,17 @@ import { DataTypes, Model } from "sequelize";
 export class Server extends Model {
     declare id: string;
     declare name: string;
+    declare description: string;
     declare avatarUrl: string;
+    declare ownerId: string | null;
     declare createdAt: Date;
     declare updatedAt: Date;
 
     static associate(models : any) {
         this.hasMany(models.Conversation, { foreignKey: 'serverId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
         this.belongsTo(models.User, { foreignKey: 'ownerId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+        this.belongsToMany(models.User, { through: models.ServerInvite, as: 'Invites', foreignKey: 'serverId', otherKey: 'senderId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+        this.belongsToMany(models.User, { through: models.ServerInvite, as: 'Invitees', foreignKey: 'serverId', otherKey: 'inviteeId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
         this.belongsToMany(models.User, { through: models.ServerMember, as: 'Members', foreignKey: 'serverId', otherKey: 'userId', onDelete: 'CASCADE', onUpdate: 'CASCADE' })
     }
 }
@@ -22,6 +26,10 @@ Server.init({
     name: {
         type: DataTypes.STRING,
         allowNull: false
+    },
+    description: {
+        type: DataTypes.STRING,
+        allowNull: true
     },
     avatarUrl: {
         type: DataTypes.STRING,

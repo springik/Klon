@@ -1,34 +1,42 @@
 <script setup lang="ts">
     const props = defineProps({
-        friend: Object
+        conversation: Object
     })
     const messages = ref([])
     const messageInput = ref('')
     const loading = ref<boolean>(false)
     const messageAttachments = ref<{ file : File, name : string, extension : string }[] | null>(null)
     const fileInput = ref<HTMLInputElement | null>(null)
-    
+
     const emit = defineEmits(['goBack'])
 
     const { $socket } = useNuxtApp()
 
     const sortedMessages = computed(() => {
-        return messages.value.sort((a, b) => {
+        if(!props.conversation)
+            return []
+        if(!props.conversation.messages || props.conversation.messages.length === 0)
+            return []
+        return props?.conversation?.messages.sort((a, b) => {
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         })
     })
-    const attachmentSrc = (attachment) => {
-        console.log(attachment);
-        return URL.createObjectURL(attachment.file)
-    }
 
+    const sendMessage = () => {
+        console.log("sending message");
+        loading.value = true
+        if(messageInput.value === '')
+            return
+        $socket.emit('send-message', { content: messageInput.value, conversationId: props.conversation.id, receiverId: null, attachment: messageAttachments.value })
+        messageInput.value = ''
+        messageAttachments.value = null
+    }
     const addAttachment = () => {
         fileInput.value?.click()
     }
     const removeAttachment = (name: string) => {
         messageAttachments.value = unref(messageAttachments)?.filter(f => f.name !== name) || null
     }
-
     const handleFileChange = (event: Event) => {
         const input = event.target as HTMLInputElement
         if(input.files && input.files.length > 0) {
@@ -39,57 +47,48 @@
             }));
         }
     }
-    const goBack = () => {
-        emit('goBack')
-    }
-    const sendMessage = () => {
-        console.log("sending message");
-        loading.value = true
-        if(messageInput.value === '')
-            return
-        $socket.emit('send-message', { content: messageInput.value, receiverId: props.friend.id, conversationId: null, attachment: messageAttachments.value })
-        messageInput.value = ''
-        messageAttachments.value = null
-    }
     const onEditMessage = (messageId: string, newContent: string) => {
-        const message = messages.value.find(m => m.id === messageId)
+        const message = props.conversation?.messages.find(m => m.id === messageId)
         message.content = newContent
         $socket.emit('edit-message', { messageId, newContent })
     }
     const onDeleteMessage = (messageId: string) => {
-        messages.value = messages.value.filter(m => m.id !== messageId)
+        props.conversation.messages = props.conversation.messages.filter(m => m.id !== messageId)
         console.log('Deleting message');
         $socket.emit('delete-message', messageId)
+    }
+    const goBack = () => {
+        console.log('going back');
+        emit('goBack')
     }
     const isImage = (attachment) => {
         const imageExtensions = ['jpg', 'png', 'jpeg', 'gif', 'bmp', 'webp']
         return imageExtensions.includes(attachment.extension.toLowerCase())
     }
+    const attachmentSrc = (attachment) => {
+        console.log(attachment);
+        return URL.createObjectURL(attachment.file)
+    }
 
     onMounted(() => {
-        $socket.on('messages', (data) => {
-            console.log(data);
-            messages.value = data
-            console.log('Received messages');
-        })
         $socket.on('message', (message) => {
-            loading.value = false
             console.log(message);
-            messages.value.push(message)
+            if(message.conversationId !== props.conversation.id)
+                return
+            props.conversation.messages.push(message)
+            loading.value = false
         })
         $socket.on('message-deleted', (messageId) => {
-            messages.value = messages.value.filter(m => m.id !== messageId)
+            props.conversation.messages = messages.value.filter(m => m.id !== messageId)
         })
         $socket.on('message-edited', (message) => {
-            const index = messages.value.findIndex(m => m.id === message.id)
-            messages.value[index].content = message.content
-            messages.value[index].updatedAt = message.updatedAt
+            const index = props.conversation.messages.findIndex(m => m.id === message.id)
+            props.conversation.messages[index].content = message.content
+            props.conversation.messages[index].updatedAt = message.updatedAt
         })
-        $socket.emit('request-messages', props.friend.id)
     })
 
     onBeforeUnmount(() => {
-        $socket.off('messages')
         $socket.off('message')
         $socket.off('message-deleted')
         $socket.off('message-edited')
@@ -97,14 +96,13 @@
 </script>
 
 <template>
-        
-    <UContainer v-if="friend" class="border-l border-gray-700 w-full h-full relative">
-        <div class="z-10 flex items-start justify-items-center mb-2 gap-x-2 fixed mt-2 lg:mt-0 backdrop-blur-sm p-4">
+    <UContainer v-if="conversation" class="w-full h-full">
+        <div class="z-10 flex items-start justify-items-center mb-2 gap-x-2 fixed lg:mt-0 p-4 backdrop-blur-sm">
             <UButton size="md" label="Go back" :ui="{ rounded: 'rounded-full' }" @click="goBack">
                 <UIcon class="w-5 h-5" name="si:arrow-left-circle-line" />
             </UButton>
             <h3 class="mt-1">
-                    Chat with {{ friend.username  }}
+                    {{ conversation.name  }}
             </h3>
         </div>
         <ul class="flex flex-col-reverse h-5/6 overflow-y-auto">
@@ -116,10 +114,10 @@
                 <ul class="overflow-y-auto">
                     <li v-for="file in messageAttachments" :key="file.name" class="text-white flex flex-row">
                         <div v-if="isImage(file)">
-                            <img class="w-24 h-24" :src="attachmentSrc(file)" :alt="file.name + '.' + file.extension">
+                            <img class="w-24 h-24" :src="attachmentSrc(file)" :alt="file.name + '.' +file.extension">
                         </div>
                         <span v-else>
-                            {{ file.name + '.' + file.extension }}
+                            {{ file.name + '.' +file.extension }}
                         </span>
                         <UButton @click="removeAttachment(file.name)" variant="ghost" label="Remove">
                             <UIcon name="si:close-circle-line" />

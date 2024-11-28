@@ -1,11 +1,17 @@
 <script setup lang="ts">
+
+    definePageMeta({
+        title: 'Login',
+        description: 'Login to the application'
+    })
     const { loggedIn } = useUserSession()
 
-    const loginWithGitHub = () => {
-        window.location.href = '/api/auth/github'
+    const redirectToGitHub = () => {
+        navigateTo('/api/auth/github', { external: true })
     }
-    const loginWithGoogle = () => {
-        window.location.href = '/api/auth/google'
+
+    const redirectToGoogle = () => {
+        navigateTo('/api/auth/google', { external: true })
     }
 </script>
 
@@ -15,16 +21,8 @@
             <h2 class="dark:text-primary light:text-primary text-xl mb-12">
                 Please login using one of the options
             </h2>
-            <UButton size="xl" class="dark:text-black light:text-primary text-bold" v-if="!loggedIn" @click="loginWithGitHub">
-                <span class="text-center w-full">
-                    Login with GitHub
-                </span>
-            </UButton>
-            <UButton size="xl" class="dark:text-black light:text-primary text-bold" v-if="!loggedIn" @click="loginWithGoogle">
-                <span class="text-center w-full">
-                    Login with Google
-                </span>
-            </UButton>
+            <UButton external v-if="!loggedIn" size="xl" class="dark:text-black light:text-primary text-bold" @click="redirectToGitHub" label="Login With Github" block />
+            <UButton external v-if="!loggedIn" size="xl" class="dark:text-black light:text-primary text-bold" @click="redirectToGoogle" label="Login With Google" block />
         </UContainer>
     </UContainer>
 </template>

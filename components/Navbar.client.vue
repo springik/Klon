@@ -6,7 +6,8 @@
 
     const logout = async () => {
         await clear()
-        window.location.href = "/login"
+        if(import.meta.client)
+            window.location.href = "/login"
     }
     const navItems = [
         [
@@ -15,10 +16,14 @@
             { label: 'Servers', to:'/servers' }
         ],
         [
+            { label: 'Profile', to: '/profile' },
+            { label: 'Settings', to: '/settings' },
             { label: 'Logout', click: logout }
         ]
     ]
-    const isMobile = computed(() => windowWidth.value < mobileBreakpoint)
+    const isMobile = computed(() => {
+        return windowWidth.value < mobileBreakpoint
+    })
     const onResize = () => {
         windowWidth.value = window.innerWidth
     }

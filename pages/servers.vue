@@ -1,7 +1,12 @@
 <script setup lang="ts">
+    definePageMeta({
+        title: 'Servers',
+        description: 'Servers page of the application',
+        middleware: 'auth'
+    })
 
     const selectedTab = ref('Servers')
-    const selectedServer = ref(null)
+    const selectedServer = ref<object | null>(null)
 
     const tabs = [{
         label: 'Servers',
@@ -15,16 +20,14 @@
     const onTabChange = (index : number) => {
         selectedTab.value = tabs[index].label
     }
+    const onServerSelected = (server : object) => {
+        selectedServer.value = server
+    }
+
 </script>
 
 <template>
-    <UTabs @change="onTabChange" :items="tabs">
-        <template #icon="{ item, selected }">
-            <UIcon :name="item.icon" class="w-4 h-4 flex-shrink-0 me-2" :class="[selected && 'text-primary-500 dark:text-primary-400']" />
-        </template>
-    </UTabs>
-
-    <ServerList v-if="selectedTab === 'Servers'" />
-    <ServerDisplay v-else-if="selectedTab === 'Servers' && selectedServer !== null" />
+    <ServerList @serverSelected="onServerSelected" v-if="selectedTab === 'Servers' && selectedServer === null" />
+    <ServerDisplay @goBack="selectedServer = null" :server="selectedServer"v-else-if="selectedTab === 'Servers' && selectedServer !== null" />
     <ServerRequestsList v-if="selectedTab === 'Requests'" />
 </template>

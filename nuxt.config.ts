@@ -1,5 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  ssr: false,
   hooks: {
     close: (nuxt) => {
       if(!nuxt.options._prepare)
@@ -23,6 +24,8 @@ export default defineNuxtConfig({
     'nuxt-auth-utils',
     'nuxt-snackbar',
     '@pinia/nuxt',
+    'nuxt-authorization',
+    '@nuxt/image',
   ],
   runtimeConfig: {
     DATABASE_USERNAME : process.env.DATABASE_USERNAME,
@@ -54,6 +57,18 @@ export default defineNuxtConfig({
     config: {}, 
     injectPosition: 0, 
     viewer: false,
+  },
+  image: {
+    format: ['webp', 'png', 'jpeg'],
+    screens: {
+      'xs': 320,
+      'sm': 640,
+      'md': 768,
+      'lg': 1024,
+      'xl': 1280,
+      'xxl': 1536,
+      '2xl': 1536,
+    }
   },
 
   pwa: {
