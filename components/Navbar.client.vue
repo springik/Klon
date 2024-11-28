@@ -16,6 +16,8 @@
             { label: 'Servers', to:'/servers' }
         ],
         [
+            { label: 'Profile', to: '/profile' },
+            { label: 'Settings', to: '/settings' },
             { label: 'Logout', click: logout }
         ]
     ]

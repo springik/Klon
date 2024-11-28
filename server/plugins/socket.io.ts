@@ -401,6 +401,33 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         console.error(error);
       }
     })
+    socket.on('update-user-avatar', async (newAvatar) => {
+    
+    let transaction : Transaction | null = null
+    try {
+        transaction = await sequelize.transaction()
+        const avatarPath = `/users/avatars/${newAvatar.name}`
+
+        const user = socket.handshake.session.user
+        const userInstance = await User.findByPk(user.id, { transaction })
+        if(!userInstance) {
+            throw new Error('User Instance not found error')
+        }
+        userInstance.avatarUrl = avatarPath
+        user.avatarUrl = avatarPath
+        
+        await FileManager.saveFile(avatarPath, newAvatar.file)
+        await userInstance?.save({ transaction })
+        await transaction.commit()
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        userSocket?.emit('avatar-changed', { status: '200', message: 'Avatar updated', newUrl: avatarPath })
+    } catch (error) {
+        console.error(error)
+        if(transaction)
+            await transaction.rollback()
+        //return createError({ status: 500, statusMessage: 'Something went wrong' })
+    }
+    })
 
 
     socket.on('test-event', (data) => {

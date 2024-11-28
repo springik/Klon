@@ -43,6 +43,16 @@ const emit = defineEmits(['editMessage', 'deleteMessage'])
         console.log('Deleting message');
         emit('deleteMessage', props.message.id)
     }
+    const isImage = (attachment) => {
+        const imageExtensions = ['jpg', 'png', 'jpeg', 'gif', 'bmp', 'webp']
+        return imageExtensions.some(ext => attachment.contentUrl.toLowerCase().endsWith(`.${ext}`))
+    }
+    const getFileName = (contentUrl) => {
+        const parts = contentUrl.split('/')
+        const fileNameWithExtension = parts[parts.length - 1]
+        const fileName = fileNameWithExtension.split('.')[0]
+        return fileName
+    }
 
     onMounted(() => {
         //console.log(session.value.user);
@@ -62,6 +72,18 @@ const emit = defineEmits(['editMessage', 'deleteMessage'])
             </div>
         </template>
         <UTextarea :resize="false" autoresize :disabled="!isBeingEdited"  :model-modifiers="{ trim: true }" :padded="true" variant="none" :ui="{ base: messageColor }" v-model="messageValue"/>
+        <ul v-if="props.message.attachments">
+            <li v-for="file in props.message.attachments">
+                <div v-if="isImage(file)">
+                    <img class="w-24 h-24 rounded-lg mt-2" :src="file.contentUrl" :alt="file.name + '.' + file.extension">
+                </div>
+                <span v-else>
+                    <a class="text-green-400" target="_blank" :href="file.contentUrl">
+                        {{ getFileName(file.contentUrl) }}
+                    </a>
+                </span>
+            </li>
+        </ul>
         <template #footer>
             <div class="flex justify-between items-center lg:gap-2">
                 <span class="mb-1 mx-1 text-white">{{ postTime }}</span>

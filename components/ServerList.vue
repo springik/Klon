@@ -30,8 +30,6 @@
     }
     const onAvatarChange = (event : Event) => {
         const input = event.target as HTMLInputElement
-        console.log(input);
-        
         
         if(input.files && input.files.length > 0) {
             const file = input.files[0];

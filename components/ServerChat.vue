@@ -61,6 +61,14 @@
         console.log('going back');
         emit('goBack')
     }
+    const isImage = (attachment) => {
+        const imageExtensions = ['jpg', 'png', 'jpeg', 'gif', 'bmp', 'webp']
+        return imageExtensions.includes(attachment.extension.toLowerCase())
+    }
+    const attachmentSrc = (attachment) => {
+        console.log(attachment);
+        return URL.createObjectURL(attachment.file)
+    }
 
     onMounted(() => {
         $socket.on('message', (message) => {
@@ -105,7 +113,10 @@
                 <h4 class="text-white text-md">Attachments:</h4>
                 <ul class="overflow-y-auto">
                     <li v-for="file in messageAttachments" :key="file.name" class="text-white flex flex-row">
-                        <span>
+                        <div v-if="isImage(file)">
+                            <img class="w-24 h-24" :src="attachmentSrc(file)" :alt="file.name + '.' +file.extension">
+                        </div>
+                        <span v-else>
                             {{ file.name + '.' +file.extension }}
                         </span>
                         <UButton @click="removeAttachment(file.name)" variant="ghost" label="Remove">
