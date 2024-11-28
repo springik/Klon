@@ -10,25 +10,15 @@ export default defineNuxtPlugin((nuxtApp) => {
     const userId = session.value?.user?.id
     
     socket = io(serverUrl, { autoConnect: loggedIn.value, auth: { userId } })
-    console.log(socket);
     nuxtApp.provide('socket', socket)
 
-    const snackbar = useSnackbar()
     socket.on("connect_error", (error) => {
         if(!socket.active) {
             console.error(error);
-            snackbar.add({
-                type: 'error',
-                text: "Connection error"
-            })
         }
     })
     socket.on("disconnect", (reason, details) => {
-        //console.log(reason);
-        snackbar.add({
-            type: 'error',
-            text: `Disconnected for ${reason}`,
-        })
+        console.log("Disconnected", reason, details)
     })
     watch(() => loggedIn.value, (newVal) => {
         if(newVal && !socket.connected) {

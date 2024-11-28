@@ -7,12 +7,10 @@
     const { loggedIn } = useUserSession()
 
     const redirectToGitHub = () => {
-        //window.location.href = 'http://localhost:3000/api/auth/github'
         navigateTo('/api/auth/github', { external: true })
     }
 
     const redirectToGoogle = () => {
-        //window.location.href = 'http://localhost:3000/api/auth/google'
         navigateTo('/api/auth/google', { external: true })
     }
 </script>

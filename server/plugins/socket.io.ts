@@ -104,6 +104,8 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
               as: 'attachments'
             }]
           });
+          //console.log(message);
+          
           //const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
           //userSocket?.emit('message', message);
   

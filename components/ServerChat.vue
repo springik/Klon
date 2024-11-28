@@ -129,7 +129,7 @@
                 <UButton @click="addAttachment" label="Add attachment">
                     <UIcon class="w-5 h-5" name="si:add-circle-line" />
                 </UButton>
-                <input multiple type="file" ref="fileInput" class="hidden" @change="handleFileChange">
+                <input multiple accept="image/webp, image/jpeg, image/png, .docx, .pdf, .pptx, .txt, text/*" type="file" ref="fileInput" class="hidden" @change="handleFileChange">
                 <UTextarea autoresize v-model="messageInput" class="w-full" :rows="1" size="xl" :maxrows="3" placeholder="Chat..." variant="outline" :model-modifiers="{ trim: true }"/>
                 <UButton :loading="loading" class="cursor-pointer" label="Send message" size="md" @click="sendMessage">
                     <UIcon class="w-5 h-5" name="si:north-east-circle-line" />
