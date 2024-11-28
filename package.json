@@ -13,7 +13,7 @@
   "dependencies": {
     "@nuxt/image": "^1.8.1",
     "@nuxt/ui": "^2.19.2",
-    "@pinia/nuxt": "^0.7.0",
+    "@pinia/nuxt": "^0.8.0",
     "@vite-pwa/assets-generator": "^0.2.6",
     "@vite-pwa/nuxt": "^0.10.6",
     "joi": "^17.13.3",
