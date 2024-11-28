@@ -32,6 +32,7 @@ export default defineNuxtConfig({
     DATABASE_PASSWORD : process.env.DATABASE_PASSWORD,
     DATABASE_HOST : process.env.DATABASE_HOST,
     DATABASE_NAME : process.env.DATABASE_NAME,
+    DATABASE_URL : process.env.DATABASE_URL,
 
     public: {
       serverUrl: process.env.SERVER_URL,

@@ -5,11 +5,11 @@ export default defineNuxtPlugin((nuxtApp) => {
 
     let socket : Socket
 
-    const serverUrl = nuxtApp.$config.public.serverUrl
+    //const serverUrl = nuxtApp.$config.public.serverUrl
     const { loggedIn, session } = useUserSession()
     const userId = session.value?.user?.id
     
-    socket = io(serverUrl, { autoConnect: loggedIn.value, auth: { userId } })
+    socket = io({ autoConnect: loggedIn.value, auth: { userId } })
     nuxtApp.provide('socket', socket)
 
     socket.on("connect_error", (error) => {
