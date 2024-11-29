@@ -21,8 +21,8 @@
             <h2 class="dark:text-primary light:text-primary text-xl mb-12">
                 Please login using one of the options
             </h2>
-            <UButton external v-if="!loggedIn" size="xl" class="dark:text-black light:text-primary text-bold" to="/api/auth/github" @click="redirectToGitHub" label="Login With Github" block />
-            <UButton external v-if="!loggedIn" size="xl" class="dark:text-black light:text-primary text-bold" to="/api/auth/google" @click="redirectToGoogle" label="Login With Google" block />
+            <UButton external v-if="!loggedIn" size="xl" class="dark:text-black light:text-primary text-bold" to="/api/auth/github" label="Login With Github" block />
+            <UButton external v-if="!loggedIn" size="xl" class="dark:text-black light:text-primary text-bold" to="/api/auth/google" label="Login With Google" block />
         </UContainer>
     </UContainer>
 </template>
