@@ -16,8 +16,13 @@ export default defineNuxtConfig({
   },
 
   nitro: {
+    /*
     prerender: {
       routes: ['/'],
+    },
+    */
+    routeRules: {
+      '/**': { ssr: false }
     },
     experimental: {
       websocket: true
@@ -41,6 +46,7 @@ export default defineNuxtConfig({
 
     public: {
       serverUrl: process.env.SERVER_URL,
+      apiBase: process.env.NUXT_API_BASE,
     },
     oauth: {
       github: {
