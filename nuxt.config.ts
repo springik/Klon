@@ -9,6 +9,11 @@ export default defineNuxtConfig({
   },
   devtools: { enabled: true },
   compatibilityDate: '2024-09-12',
+  router: {
+    options: {
+      strict: true
+    }
+  },
 
   nitro: {
     prerender: {
