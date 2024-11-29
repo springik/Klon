@@ -5,7 +5,7 @@ const config = useRuntimeConfig()
 const seqConfig = {
     dialect: 'postgres',
     dialectModule: pg,
-    logging: false/*,
+    logging: false,
     dialectOptions:
     {
         ssl: {
@@ -13,6 +13,5 @@ const seqConfig = {
             rejectUnauthorized: false
         }
     }
-        */
 }
 export const sequelize = new Sequelize(`${config.DATABASE_URL}`, seqConfig)
