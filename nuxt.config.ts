@@ -1,6 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  ssr: false,
+  ssr: true,
   hooks: {
     close: (nuxt) => {
       if(!nuxt.options._prepare)
@@ -16,14 +16,13 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    /*
     prerender: {
       routes: ['/'],
     },
-    */
+    /*
     routeRules: {
       '/**': { ssr: false }
-    },
+    },*/
     experimental: {
       websocket: true
     },

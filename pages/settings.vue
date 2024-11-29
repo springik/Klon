@@ -17,16 +17,6 @@
             
             try {
                 $socket.emit('update-user-avatar', avatarFile.value)
-                /*
-                console.log(avatarFile.value.file);
-                const response = await $fetch('/api/users/avatar', {
-                    method: 'PUT',
-                    body: {
-                        newAvatar: avatarFile.value
-                    }
-                })
-                console.log(response)
-                */
             } catch (error) {
                 console.error(error)
             }

@@ -4,8 +4,8 @@ import pg from 'pg'
 const config = useRuntimeConfig()
 const seqConfig = {
     dialect: 'postgres',
-    dialectModuel: pg,
-    logging: false,
+    dialectModule: pg,
+    logging: false/*,
     dialectOptions:
     {
         ssl: {
@@ -13,5 +13,6 @@ const seqConfig = {
             rejectUnauthorized: false
         }
     }
+        */
 }
 export const sequelize = new Sequelize(`${config.DATABASE_URL}`, seqConfig)

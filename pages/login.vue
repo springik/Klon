@@ -2,23 +2,24 @@
 
     definePageMeta({
         title: 'Login',
-        description: 'Login to the application'
+        description: 'Login to the application',
+        middleware: 'auth'
     })
     const { loggedIn } = useUserSession()
     const config = useRuntimeConfig()
 
     const redirectToGitHub = () => {
         //navigateTo('/api/auth/github', { external: true })
-        window.location.href = `${config.public.apiBase}/auth/github`
+        if(import.meta.client)
+            window.location.href = `${config.public.apiBase}/auth/github`
     }
 
     const redirectToGoogle = () => {
         //navigateTo('/api/auth/google', { external: true })
-        window.location.href = `${config.public.apiBase}/auth/google`
+        if(import.meta.client)
+            window.location.href = `${config.public.apiBase}/auth/google`
     }
 </script>
-
-//FIXME: The redirection doesn't work in normal mode. It works in private browsing mode only.
 
 <template>
     <UContainer class="flex flex-col items-center justify-center h-full w-full gap-4">
