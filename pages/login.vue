@@ -5,15 +5,16 @@
         description: 'Login to the application'
     })
     const { loggedIn } = useUserSession()
+    const config = useRuntimeConfig()
 
     const redirectToGitHub = () => {
         //navigateTo('/api/auth/github', { external: true })
-        window.location.href = 'http://localhost:3000/api/auth/github'
+        window.location.href = `${config.public.apiBase}/auth/github`
     }
 
     const redirectToGoogle = () => {
         //navigateTo('/api/auth/google', { external: true })
-        window.location.href = 'http://localhost:3000/api/auth/google'
+        window.location.href = `${config.public.apiBase}/auth/google`
     }
 </script>
 
