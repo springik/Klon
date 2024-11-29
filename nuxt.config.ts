@@ -11,7 +11,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-09-12',
   router: {
     options: {
-      strict: true
+      strict: false
     }
   },
 
@@ -66,7 +66,7 @@ export default defineNuxtConfig({
     configPath: 'tailwind.config', 
     exposeConfig: false, 
     config: {}, 
-    injectPosition: 0, 
+    injectPosition: 0,
     viewer: false,
   },
   image: {

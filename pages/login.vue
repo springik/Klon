@@ -3,8 +3,9 @@
     definePageMeta({
         title: 'Login',
         description: 'Login to the application',
-        middleware: 'auth'
+        middleware: 'guest'
     })
+    const router = useRouter()
     const { loggedIn } = useUserSession()
     const config = useRuntimeConfig()
 
@@ -19,6 +20,10 @@
         if(import.meta.client)
             window.location.href = `${config.public.apiBase}/auth/google`
     }
+    onMounted(() => {
+        if(loggedIn.value)
+            router.push('/')
+    })
 </script>
 
 <template>
