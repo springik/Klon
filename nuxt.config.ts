@@ -52,12 +52,12 @@ export default defineNuxtConfig({
       github: {
         clientId: process.env.NUXT_OAUTH_GITHUB_CLIENT_ID,
         clientSecret: process.env.NUXT_OAUTH_GITHUB_CLIENT_SECRET,
-        redirectURL: 'http://localhost:3000/api/auth/github'
+        redirectURL: process.env.NUXT_OAUTH_GITHUB_REDIRECT_URL
       },
       google: {
         clientId: process.env.NUXT_OAUTH_GOOGLE_CLIENT_ID,
         clientSecret: process.env.NUXT_OAUTH_GOOGLE_CLIENT_SECRET,
-        redirectURL: 'http://localhost:3000/api/auth/google'
+        redirectURL: process.env.NUXT_OAUTH_GOOGLE_REDIRECT_URL
       }
     }
   },
