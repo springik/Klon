@@ -97,7 +97,7 @@
 
 <template>
     <UContainer v-if="conversation" class="w-full h-full">
-        <div class="z-10 flex items-start justify-items-center mb-2 gap-x-2 fixed lg:mt-0 p-4 backdrop-blur-sm">
+        <div class="rounded-3xl z-10 flex items-start justify-items-center mb-2 gap-x-2 fixed lg:mt-0 p-4 backdrop-blur-sm">
             <UButton size="md" label="Go back" :ui="{ rounded: 'rounded-full' }" @click="goBack">
                 <UIcon class="w-5 h-5" name="si:arrow-left-circle-line" />
             </UButton>
