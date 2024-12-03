@@ -20,20 +20,20 @@
                 <img :src="userRef.avatarUrl" alt="Avatar" class="w-32 h-32 rounded-full" />
             </div>
             <div class="mb-4">
-                <h2 class="text-xl font-semibold">Username</h2>
-                <p>{{ userRef.username }}</p>
+                <h2 class=" text-xl font-semibold">Username</h2>
+                <p class="indent-4">{{ userRef.username }}</p>
             </div>
             <div class="mb-4">
                 <h2 class="text-xl font-semibold">Email</h2>
-                <p>{{ userRef.email }}</p>
+                <p class="indent-4">{{ userRef.email }}</p>
             </div>
             <div class="mb-4">
                 <h2 class="text-xl font-semibold">Provider</h2>
-                <p class="capitalize">{{ userRef.provider }}</p>
+                <p class="capitalize indent-4">{{ userRef.provider }}</p>
             </div>
             <div class="mb-4">
                 <h2 class="text-xl font-semibold">Joined At</h2>
-                <p>{{ new Date(userRef.createdAt).toLocaleString() }}</p>
+                <p class="indent-4">{{ new Date(userRef.createdAt).toLocaleString() }}</p>
             </div>
     </div>
 </template>

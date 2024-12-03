@@ -45,7 +45,7 @@
     const sendMessage = () => {
         console.log("sending message");
         loading.value = true
-        if(messageInput.value === '')
+        if(messageInput.value === '' && !messageAttachments.value || messageAttachments.value?.length === 0)
             return
         $socket.emit('send-message', { content: messageInput.value, receiverId: props.friend.id, conversationId: null, attachment: messageAttachments.value })
         messageInput.value = ''
@@ -99,7 +99,7 @@
 <template>
         
     <UContainer v-if="friend" class="border-l border-gray-700 w-full h-full relative">
-        <div class="z-10 flex items-start justify-items-center mb-2 gap-x-2 fixed mt-2 lg:mt-0 backdrop-blur-sm p-4">
+        <div class="rounded-3xl z-10 flex items-start justify-items-center mb-2 gap-x-2 fixed mt-2 lg:mt-0 backdrop-blur-sm p-4">
             <UButton size="md" label="Go back" :ui="{ rounded: 'rounded-full' }" @click="goBack">
                 <UIcon class="w-5 h-5" name="si:arrow-left-circle-line" />
             </UButton>

@@ -23,7 +23,7 @@ Message.init({
     },
     content: {
         type: DataTypes.TEXT,
-        allowNull: false
+        allowNull: true
     },
     authorId: {
         type: DataTypes.UUID,

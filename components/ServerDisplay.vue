@@ -120,7 +120,7 @@
 <template>
     <div class="relative">
         <div class="absolute left-0 right-0 top-0">
-            <div v-if="selectedConversation === null" class="z-10 flex items-start justify-items-center mb-2 gap-x-2 fixed mt-2 lg:mt-0 backdrop-blur-sm p-4">
+            <div v-if="selectedConversation === null" class="rounded-3xl z-10 flex items-start justify-items-center mb-2 gap-x-2 fixed mt-2 lg:mt-0 backdrop-blur-sm p-4">
             <UButton size="md" label="Go back" :ui="{ rounded: 'rounded-full' }" @click="goBack">
                 <UIcon class="w-5 h-5" name="si:arrow-left-circle-line" />
             </UButton>
@@ -132,7 +132,7 @@
         <h2 class="text-white text-lg font-semibold mb-2">Server: {{ server.name }}</h2>
         <div class="grid grid-cols-3 gap-4">
             <div class="col-span-2">
-                <div class="bg-gray-800 p-4 rounded-lg">
+                <div class="dark:bg-gray-900 bg-gray-400 p-4 rounded-lg">
                     <h3 class="text-white text-lg font-semibold mb-2">Description</h3>
                     <p class="text-gray-300">{{ server.description }}</p>
                 </div>

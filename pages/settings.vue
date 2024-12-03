@@ -17,16 +17,6 @@
             
             try {
                 $socket.emit('update-user-avatar', avatarFile.value)
-                /*
-                console.log(avatarFile.value.file);
-                const response = await $fetch('/api/users/avatar', {
-                    method: 'PUT',
-                    body: {
-                        newAvatar: avatarFile.value
-                    }
-                })
-                console.log(response)
-                */
             } catch (error) {
                 console.error(error)
             }
@@ -77,7 +67,13 @@
             <label for="avatarInput">
                 Avatar:
             </label>
-            <input name="avatarInput" ref="input" type="file" @change="onAvatarChange">
+            <div class="flex flex-col gap-4">
+                <input name="avatarInput" ref="input" type="file" @change="onAvatarChange">
+                <span v-if="avatar" class="lg:gap-4 gap-2 flex items-center">
+                    New Avatar:
+                    <UAvatar :src="avatar" size="lg" />
+                </span>
+            </div>
             <template #footer>
                 <UButton @click="save" label="Save">
 

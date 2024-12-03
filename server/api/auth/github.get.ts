@@ -16,6 +16,7 @@ export default defineOAuthGitHubEventHandler({
                     }
                 })
                 await setUserSession(event, { user: userInstance })
+                //console.log('user', userInstance.dataValues);
                 return sendRedirect(event, '/')
             } catch (error) {
                 console.error(error)

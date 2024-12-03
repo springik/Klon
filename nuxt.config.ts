@@ -1,6 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  ssr: false,
+  ssr: true,
   hooks: {
     close: (nuxt) => {
       if(!nuxt.options._prepare)
@@ -9,11 +9,20 @@ export default defineNuxtConfig({
   },
   devtools: { enabled: true },
   compatibilityDate: '2024-09-12',
+  router: {
+    options: {
+      strict: false
+    }
+  },
 
   nitro: {
     prerender: {
       routes: ['/'],
     },
+    /*
+    routeRules: {
+      '/**': { ssr: false }
+    },*/
     experimental: {
       websocket: true
     },
@@ -32,20 +41,22 @@ export default defineNuxtConfig({
     DATABASE_PASSWORD : process.env.DATABASE_PASSWORD,
     DATABASE_HOST : process.env.DATABASE_HOST,
     DATABASE_NAME : process.env.DATABASE_NAME,
+    DATABASE_URL : process.env.DATABASE_URL,
 
     public: {
       serverUrl: process.env.SERVER_URL,
+      apiBase: process.env.NUXT_API_BASE,
     },
     oauth: {
       github: {
         clientId: process.env.NUXT_OAUTH_GITHUB_CLIENT_ID,
         clientSecret: process.env.NUXT_OAUTH_GITHUB_CLIENT_SECRET,
-        redirectURL: 'http://localhost:3000/api/auth/github'
+        redirectURL: process.env.NUXT_OAUTH_GITHUB_REDIRECT_URL
       },
       google: {
         clientId: process.env.NUXT_OAUTH_GOOGLE_CLIENT_ID,
         clientSecret: process.env.NUXT_OAUTH_GOOGLE_CLIENT_SECRET,
-        redirectURL: 'http://localhost:3000/api/auth/google'
+        redirectURL: process.env.NUXT_OAUTH_GOOGLE_REDIRECT_URL
       }
     }
   },
@@ -55,7 +66,7 @@ export default defineNuxtConfig({
     configPath: 'tailwind.config', 
     exposeConfig: false, 
     config: {}, 
-    injectPosition: 0, 
+    injectPosition: 0,
     viewer: false,
   },
   image: {

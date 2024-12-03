@@ -1,8 +1,17 @@
 import { Sequelize } from "sequelize";
+import pg from 'pg'
 
 const config = useRuntimeConfig()
-export const sequelize = new Sequelize(config.DATABASE_NAME, config.DATABASE_USERNAME, config.DATABASE_PASSWORD, {
+const seqConfig = {
     dialect: 'postgres',
-    host: config.DATABASE_HOST,
-    logging: false
-})
+    dialectModule: pg,
+    logging: false,
+    dialectOptions:
+    {
+        ssl: {
+            require: true,
+            rejectUnauthorized: false
+        }
+    }
+}
+export const sequelize = new Sequelize(`${config.DATABASE_URL}`, seqConfig)

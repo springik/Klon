@@ -51,11 +51,16 @@ const emit = defineEmits(['editMessage', 'deleteMessage'])
         const parts = contentUrl.split('/')
         const fileNameWithExtension = parts[parts.length - 1]
         const fileName = fileNameWithExtension.split('.')[0]
-        return fileName
+        return fileNameWithExtension
     }
+    const hasImageAttachment = computed(() => {
+        return props?.message?.attachments.some(attachment => isImage(attachment))
+    })
+
+    
 
     onMounted(() => {
-        //console.log(session.value.user);
+        
     })
 
 </script>
@@ -71,8 +76,8 @@ const emit = defineEmits(['editMessage', 'deleteMessage'])
                 </span>
             </div>
         </template>
-        <UTextarea :resize="false" autoresize :disabled="!isBeingEdited"  :model-modifiers="{ trim: true }" :padded="true" variant="none" :ui="{ base: messageColor }" v-model="messageValue"/>
-        <ul v-if="props.message.attachments">
+        <UTextarea v-if="message?.content" :resize="false" autoresize :disabled="!isBeingEdited"  :model-modifiers="{ trim: true }" :padded="true" variant="none" :ui="{ base: messageColor }" v-model="messageValue"/>
+        <ul class="flex flex-row gap-2" v-if="props.message.attachments">
             <li v-for="file in props.message.attachments">
                 <div v-if="isImage(file)">
                     <img class="w-24 h-24 rounded-lg mt-2" :src="file.contentUrl" :alt="file.name + '.' + file.extension">

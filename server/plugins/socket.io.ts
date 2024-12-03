@@ -37,19 +37,17 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
           content: data.content
           , transaction
         });
-        log(message);
 
         if(data.attachment) {
           //const attachments : MessageAttachment[] = [];
           data.attachment.forEach(async (attachment : { file : Buffer, name : string, extension : string }) => {
             const attachmentPath = `/attachments/${attachment.name}.${attachment.extension}`;
             await FileManager.saveFile(attachmentPath, attachment.file);
-            /*const messageAttachment =*/ await MessageAttachment.create({
+            await MessageAttachment.create({
               messageId: message.dataValues.id,
               contentUrl: attachmentPath
             , transaction
             })
-            //attachments.push(messageAttachment);
           })
         }
         
@@ -77,7 +75,6 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
             conversationId: data.conversationId,
             content: data.content
           , transaction});
-          log(message);
 
           if(data.attachment) {
             const attachments : MessageAttachment[] = [];

@@ -2,17 +2,28 @@
 
     definePageMeta({
         title: 'Login',
-        description: 'Login to the application'
+        description: 'Login to the application',
+        middleware: 'guest'
     })
+    const router = useRouter()
     const { loggedIn } = useUserSession()
+    const config = useRuntimeConfig()
 
     const redirectToGitHub = () => {
-        navigateTo('/api/auth/github', { external: true })
+        //navigateTo('/api/auth/github', { external: true })
+        if(import.meta.client)
+            window.location.href = `${config.public.apiBase}/auth/github`
     }
 
     const redirectToGoogle = () => {
-        navigateTo('/api/auth/google', { external: true })
+        //navigateTo('/api/auth/google', { external: true })
+        if(import.meta.client)
+            window.location.href = `${config.public.apiBase}/auth/google`
     }
+    onMounted(() => {
+        if(loggedIn.value)
+            router.push('/')
+    })
 </script>
 
 <template>
@@ -21,8 +32,8 @@
             <h2 class="dark:text-primary light:text-primary text-xl mb-12">
                 Please login using one of the options
             </h2>
-            <UButton external v-if="!loggedIn" size="xl" class="dark:text-black light:text-primary text-bold" @click="redirectToGitHub" label="Login With Github" block />
-            <UButton external v-if="!loggedIn" size="xl" class="dark:text-black light:text-primary text-bold" @click="redirectToGoogle" label="Login With Google" block />
+            <UButton @click="redirectToGitHub" v-if="!loggedIn" size="xl" class="dark:text-black light:text-primary text-bold" label="Login With Github" block />
+            <UButton @click="redirectToGoogle" v-if="!loggedIn" size="xl" class="dark:text-black light:text-primary text-bold" label="Login With Google" block />
         </UContainer>
     </UContainer>
 </template>
