@@ -10,7 +10,6 @@
       <NuxtPage />
       <NuxtSnackbar />
     </NuxtLayout>
-
   </div>
 
 </template>

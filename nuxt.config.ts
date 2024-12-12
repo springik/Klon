@@ -1,4 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
+
 export default defineNuxtConfig({
   ssr: true,
   hooks: {
@@ -14,15 +16,33 @@ export default defineNuxtConfig({
       strict: false
     }
   },
-
+  vite: {
+    logLevel: 'info',
+    /*define: {
+      global: {}
+    },*/
+    plugins: [
+      nodePolyfills()
+    ]
+  },
+  experimental: {
+    payloadExtraction: true,
+    watcher: 'parcel'
+  },
   nitro: {
+    esbuild: {
+      options: {
+        target: 'esnext'
+      }
+    },
     prerender: {
       routes: ['/'],
     },
-    /*
     routeRules: {
-      '/**': { ssr: false }
-    },*/
+      '/sw.js': { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0' } },
+      '/manifest.webmanifest': { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' } },
+      '/index.html': { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' } },
+    },
     experimental: {
       websocket: true
     },
@@ -35,6 +55,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     'nuxt-authorization',
     '@nuxt/image',
+    '@nuxtjs/html-validator',
   ],
   runtimeConfig: {
     DATABASE_USERNAME : process.env.DATABASE_USERNAME,
@@ -62,11 +83,10 @@ export default defineNuxtConfig({
   },
 
   tailwindcss: {
-    cssPath: '~/assets/css/tailwind.css', 
+    cssPath: ['~/assets/css/tailwind.css', { injectPosition: 0 }], 
     configPath: 'tailwind.config', 
     exposeConfig: false, 
-    config: {}, 
-    injectPosition: 0,
+    config: {},
     viewer: false,
   },
   image: {
@@ -83,8 +103,9 @@ export default defineNuxtConfig({
   },
 
   pwa: {
-    registerType: 'prompt',
-    injectRegister: false,
+    registerType: 'autoUpdate',
+    injectRegister: 'auto',
+    strategies: 'generateSW',
 
     pwaAssets: {
       disabled: false,
@@ -99,14 +120,22 @@ export default defineNuxtConfig({
     },
 
     workbox: {
-      globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+      navigateFallback: '/',
+      runtimeCaching: [
+        {
+          urlPattern: '/',
+          handler: 'NetworkFirst',
+          method: 'GET'
+        }
+      ],
+      //globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
       cleanupOutdatedCaches: true,
       clientsClaim: true,
     },
 
     devOptions: {
       enabled: true,
-      suppressWarnings: true,
+      suppressWarnings: false,
       navigateFallback: '/',
       navigateFallbackAllowlist: [/^\/$/],
       type: 'module',

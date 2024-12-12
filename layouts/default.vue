@@ -16,6 +16,11 @@
     window.removeEventListener('resize', onResize)
   })
 
+  onMounted(() => {
+    if(import.meta.client)
+      onResize()
+  })
+
 </script>
 
 <template>

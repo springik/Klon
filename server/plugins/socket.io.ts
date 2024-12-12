@@ -428,6 +428,11 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
     }
     })
 
+    socket.on('signal', (data) => {
+      const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.to));
+      receiverSocket?.emit('signal', { signal: data.signal, from: socket.handshake.session.user.id });
+    })
+
 
     socket.on('test-event', (data) => {
         console.log(data);
