@@ -428,9 +428,37 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
     }
     })
 
-    socket.on('signal', (data) => {
+    socket.on('call-user', async (data) => {
+      try {
+        const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.receiverId));
+        const callerInstance = await User.findByPk(socket.handshake.session.user.id, { attributes: ['id', 'username', 'avatarUrl'] });
+        receiverSocket?.emit('incoming-call', { other: callerInstance });
+      }
+      catch (error) {
+        console.error(error);
+      }
+    })
+    socket.on('accept-call', async (data) => {
+      const callerSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.to));
+      callerSocket?.emit('call-accepted');
+    })
+    socket.on('passalong-init-signal', async (data) => {
       const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.to));
-      receiverSocket?.emit('signal', { signal: data.signal, from: socket.handshake.session.user.id });
+      receiverSocket?.emit('init-signal', { signal: data.signal, from: socket.handshake.session.user.id });
+    })
+    socket.on('decline-call', async (data) => {
+      const callerSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.callerId));
+      callerSocket?.emit('call-declined');
+    })
+    socket.on('end-call', async (data) => {
+      const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.to));
+      receiverSocket?.emit('call-ended');
+    })
+    socket.on('signal', async (data) => {
+      console.log('socket signal', { signal: data.signal });
+      
+      const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.to));
+      receiverSocket?.emit('signal', { signal: data.signal, from: data.callerId });
     })
 
 

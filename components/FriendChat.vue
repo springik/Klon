@@ -48,7 +48,7 @@
     }
     const callFriend = () => {
         console.log('Calling friend');
-        router.push('/friends/' + props.friend.id)
+        router.push('/friends/' + props.friend.id + '/initiate')
     }
     const sendMessage = () => {
         console.log("sending message");

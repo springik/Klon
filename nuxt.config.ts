@@ -18,9 +18,9 @@ export default defineNuxtConfig({
   },
   vite: {
     logLevel: 'info',
-    /*define: {
-      global: {}
-    },*/
+    define: {
+      __VUE_PROD_DEVTOOLS__: true,
+    },
     plugins: [
       nodePolyfills()
     ]

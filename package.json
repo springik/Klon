@@ -21,7 +21,7 @@
     "@vite-pwa/nuxt": "^0.10.6",
     "joi": "^17.13.3",
     "nuxt": "^3.14.1592",
-    "nuxt-auth-utils": "^0.5.6",
+    "nuxt-auth-utils": "^0.5.7",
     "nuxt-authorization": "^0.3.2",
     "nuxt-snackbar": "^1.1.2",
     "pg": "^8.13.1",
@@ -37,12 +37,12 @@
     "workbox-window": "^7.3.0"
   },
   "devDependencies": {
-    "@iconify-json/si": "^1.2.2",
+    "@iconify-json/si": "^1.2.3",
     "@types/uuid": "^10.0.0",
     "sequelize-cli": "^6.6.2",
     "typescript": "^5.7.2",
     "vite-plugin-node-polyfills": "^0.22.0",
-    "vue-tsc": "^2.1.10"
+    "vue-tsc": "^2.2.0"
   },
   "overrides": {
     "sharp": "0.32.6",
