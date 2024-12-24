@@ -18,6 +18,8 @@
     const remoteVideo = ref<HTMLVideoElement | null>(null)
     const localsignal = ref()
     const inited = ref(false)
+    const sharingScreen = ref<boolean>(false)
+    const muted = ref<boolean>(false)
 
     const checkMediaDevices = async () : Promise<DeviceCapabilities> => {
         if(!import.meta.client)
@@ -90,7 +92,7 @@
             remoteVideo.value!.srcObject = remoteStream
         })
 
-        $socket.emit('call-user', { receiverId: props.friendId })
+        //$socket.emit('call-user', { receiverId: props.friendId })
 
         } catch (error) {
             if(error instanceof Error) {
@@ -150,8 +152,26 @@
         router.push('/friends/')
     }
     const shareScreen = async () => {
-        if(!peer)
+        if(!sharingScreen.value) {
+            const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
+            peer.streams[0].getVideoTracks()[0].stop()
+            peer.replaceTrack(peer.streams[0].getVideoTracks()[0], screenStream.getVideoTracks()[0], peer.streams[0])
+            localStream = screenStream
+            sharingScreen.value = true
             return
+        }
+
+        const { hasAudioInput, hasVideoInput } = await checkMediaDevices()
+        const newStream = await navigator.mediaDevices.getUserMedia({ video: hasVideoInput, audio: hasAudioInput })
+        peer.streams[0].getVideoTracks()[0].stop()
+        peer.replaceTrack(peer.streams[0].getVideoTracks()[0], newStream.getVideoTracks()[0], peer.streams[0])
+        sharingScreen.value = false
+    }
+    const muteMic = () => {
+        if(!localStream)
+            return
+        localStream.getAudioTracks().forEach(track => track.enabled = !track.enabled)
+        muted.value = !muted.value
     }
 
     onMounted(async () => {
@@ -190,18 +210,21 @@
         $socket.off('call-accepted')
         $socket.off('init-signal')
 
-        if(peer) {
-            peer.destroy()
-        }
+        endCall()
     })
 
 </script>
 
 <template>
     <div>
+        <UPlaceholder v-if="!localStream" text="Loading..."></UPlaceholder>
         <video ref="localVideo" autoplay playsinline></video>
+        <UPlaceholder v-if="!remoteStream" text="Loading..."></UPlaceholder>
         <video ref="remoteVideo" autoplay playsinline></video>
         <UButton @click="endCall">End Call</UButton>
-        <UButton @click="shareScreen">Share Screen</UButton>
+        <UButton v-if="!muted" @click="muteMic">Mute</UButton>
+        <UButton v-else @click="muteMic">Unmute</UButton>
+        <UButton v-if="!sharingScreen" @click="shareScreen">Share Screen</UButton>
+        <UButton v-else @click="shareScreen">Share camera</UButton>
     </div>
 </template>
