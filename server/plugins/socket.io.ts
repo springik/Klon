@@ -459,7 +459,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       console.log('socket signal', { signal: data.signal });
       
       const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.to));
-      receiverSocket?.emit('signal', { signal: data.signal, from: data.callerId });
+      receiverSocket?.emit('signal', { signal: data.signal, from: socket.handshake.session.user.id });
     })
 
     socket.on('create-call', async (data: { name: string, serverId: string }) => {
@@ -494,7 +494,6 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
 
     socket.on('join-call', async (data: { groupId: string, serverId: string }) => {
       let receiverSocket : Socket | undefined;
-      console.log(groups)
       try {
         receiverSocket = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
         if(groups.has(data.serverId)) {
@@ -505,7 +504,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
             groups.get(data.serverId)?.set(data.groupId, group);
           }
 
-          console.log(groups)
+          console.log('groups', groups)
         }
         else {
           throw new Error('Group not found');
@@ -513,13 +512,9 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         }
         const peerIds = (groups.get(data.serverId)?.get(data.groupId)?.members ?? []).filter(id => id !== socket.handshake.session.user.id);
 
-        receiverSocket?.emit('join-call', peerIds );
-
-        peerIds.forEach((other: string) => {
-          const otherSocket : Socket | undefined = io.sockets.sockets.get(users.get(other));
-          if(otherSocket)
-            otherSocket.emit('user-joined-call', { peerId: socket.handshake.session.user.id });
-        })
+        receiverSocket?.emit('join-call', peerIds);
+        console.log('chat members', groups.get(data.serverId)?.get(data.groupId)?.members);
+        
       } catch (error) {
         console.error(error);
         if(error instanceof Error)
@@ -529,7 +524,6 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
           }
       }
     })
-    //TODO: groups needs to have an array of calls
     socket.on('request-calls', async (serverId) => {
       try {
         const serverGroupsMap = groups.get(serverId);
@@ -537,17 +531,8 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         for(const [key, value] of serverGroupsMap ?? new Map<string, Group>()) {
           calls.push(value);
         }
-        console.log(serverGroupsMap);
-        
-
-        console.log(groups);
-        
-        console.log(calls);
-        
-        
         const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
         userSocket?.emit('calls-list', { calls: calls ?? [] });
-        
       } catch (error) {
         console.error(error);
       }
