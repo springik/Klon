@@ -8,8 +8,8 @@ const { session } = useUserSession()
 
 let localStream : MediaStream | null = null
 const localVideo = ref<HTMLVideoElement | null>(null)
-const remoteStreams : Map<string, MediaStream> = new Map()
-const remoteVideos : Map<string, HTMLVideoElement> = new Map()
+const remoteStreams = ref<object>({})
+const remoteVideos = ref<Map<string, HTMLVideoElement>>(new Map())
 const peers : Map<string, Peer.Instance> = new Map()
 let localPeerId: string | null = null
 
@@ -58,12 +58,13 @@ function createPeer(localStream: MediaStream, creator: boolean, peerId: string) 
         console.log('to', peerId)
         $socket.emit('signal', { signal: data, to: peerId })
     })
-    peer.on('stream', (stream) => {
+    peer.on('stream', async (stream) => {
         console.log('got remote stream', stream)
         console.log('peer id', peerId)
 
-        //remoteStreams.set(peerId, stream)
-        //remoteVideos.get(peerId)!.srcObject = stream
+        remoteStreams.value[peerId] = stream
+        await nextTick()
+        remoteVideos.value.get(peerId)!.srcObject = stream
     })
     peer.on('connect', () => {
         console.log('peer connected')
@@ -71,12 +72,19 @@ function createPeer(localStream: MediaStream, creator: boolean, peerId: string) 
     peer.on('close', () => {
         console.log('peer closed')
         peers.delete(peerId)
-        //remoteStreams.delete(peerId)
+        remoteStreams.value.delete(peerId)
+        delete remoteStreams.value[peerId]
     })
     peer.on('error', (error) => {
         console.error('peer error', error)
     })
     return peer
+}
+function setVideoRef(peerId: string) {
+    return (video: HTMLVideoElement) => {
+        if(video)
+            remoteVideos.value.set(peerId, video)
+    }
 }
 
 onMounted(async () => {
@@ -123,7 +131,7 @@ onMounted(async () => {
         if (peer) {
             peer.destroy()
             peers.delete(peerId)
-            remoteStreams.delete(peerId)
+            delete remoteStreams.value[peerId]
         }
     })
     joinCall()
@@ -133,16 +141,16 @@ onBeforeUnmount(() => {
     $socket.off('join-call')
     $socket.off('user-left-call')
 
-    /*
     if(peers)
         peers.forEach(peer => peer.destroy())
-    */
 })
 </script>
 
 <template>
-    <video ref="localVideo" autoplay></video>
-    <div v-for="[peerId, stream] in remoteStreams" :key="peerId">
-        <video :ref="el => remoteVideos.set(peerId, el)" autoplay></video>
+    <div>
+        <video ref="localVideo" autoplay></video>
+        <div v-for="(stream, peerId) in remoteStreams" :key="peerId">
+            <video :ref="setVideoRef(peerId)" autoplay></video>
+        </div>
     </div>
 </template>
