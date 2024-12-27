@@ -1,7 +1,7 @@
 import type { NitroApp } from "nitropack";
 import { Server as Engine } from "engine.io";
 import { Server, Socket } from "socket.io";
-import { defineEventHandler } from "h3";
+import { defineEventHandler, use } from "h3";
 import { User } from "../models/User.model";
 import { Friendship } from "../models/FriendshipRequest.model";
 import { Message } from "../models/Message.model";
@@ -14,6 +14,7 @@ import { MessageAttachment } from "../models/MessageAttachment.model";
 import { log } from "console";
 
 let users = new Map();
+const groups = new Map<string, Group>();
 export default defineNitroPlugin((nitroApp: NitroApp) => {
   console.log("Running socket.io plugin");
   const engine = new Engine();
@@ -459,6 +460,69 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       
       const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.to));
       receiverSocket?.emit('signal', { signal: data.signal, from: data.callerId });
+    })
+
+    socket.on('create-call', async (data: { name: string, serverId: string }) => {
+      const group : Group = {
+        name: data.name,
+        members: []
+      }
+
+      groups.set(data.serverId, group)
+
+      const members = await ServerMember.findAll({
+        where: {
+          serverId: data.serverId
+        }
+      })
+
+      members.forEach((member) => {
+        const memberSocket : Socket | undefined = io.sockets.sockets.get(users.get(member.userId));
+        memberSocket?.emit('call-created', { serverId: data.serverId, call: group });
+      })
+    })
+
+    socket.on('join-call', async (data) => {
+      let receiverSocket : Socket | undefined;
+      try {
+        receiverSocket = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        if(groups.has(data.serverId)) {
+          const group = groups.get(data.serverId);
+          group?.members.push(socket.handshake.session.user.id);
+
+          if(group)
+            groups.set(data.serverId, group);
+        }
+        else {
+          throw new Error('Group not found');
+          //groups.set(data.serverId, [socket.handshake.session.user.id]);
+        }
+        const others = (groups.get(data.serverId)?.members ?? []).filter(id => id !== socket.handshake.session.user.id);
+
+        others.forEach((other: string) => {
+          const otherSocket : Socket | undefined = io.sockets.sockets.get(users.get(other));
+          if(otherSocket)
+            otherSocket.emit('user-joined-call', { peerId: socket.handshake.session.user.id });
+        })
+  
+        receiverSocket?.emit('join-call', { peerIds: others });
+      } catch (error) {
+        console.error(error);
+        if(error instanceof Error)
+          if(error.message === 'Group not found')
+            receiverSocket?.emit('group-not-found', { message: error.message });
+      }
+    })
+    socket.on('request-calls', async (serverId) => {
+      try {
+        const calls = groups.get(serverId);
+        
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        userSocket?.emit('calls-list', { calls: calls ?? [] });
+        
+      } catch (error) {
+        console.error(error);
+      }
     })
 
 

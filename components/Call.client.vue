@@ -21,6 +21,7 @@
     const sharingScreen = ref<boolean>(false)
     const muted = ref<boolean>(false)
 
+/*
     const checkMediaDevices = async () : Promise<DeviceCapabilities> => {
         if(!import.meta.client)
             return { hasAudioInput: false, hasVideoInput: false }
@@ -34,6 +35,8 @@
         }
         return { hasAudioInput: false, hasVideoInput: false }
     }
+*/
+
 
     //TODO: remove
     // for reference https://medium.com/stackanatomy/introduction-to-simple-peer-a-webrtc-library-ab04ea8aa5fe
