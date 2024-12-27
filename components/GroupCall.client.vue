@@ -17,6 +17,10 @@ const props = defineProps({
     serverId: String,
 })
 
+/** 
+ *  Joins a call with user media.
+ *  Uses group ID prop.
+*/
 async function joinCall() {
     try {
         const { hasAudioInput, hasVideoInput } = await checkMediaDevices()
@@ -32,11 +36,22 @@ async function joinCall() {
     }
 }
 
+/** 
+ *  Creates a simple-peer peer instance
+ *  @param {MediaStream} stream - Stream to be sent by the peer
+ *  @param {boolean} creator - Whether the peer is the initiator of the call
+ *  @param {string} peerId - User ID of the peer
+ *  @returns {Peer.Instance} - Peer instance
+*/
 function createPeer(localStream: MediaStream, creator: boolean, peerId: string) {
     const peer = new Peer({
         initiator: creator,
         trickle: false,
         stream: localStream,
+    })
+    peer.on('signal', (data) => {
+        console.log('sending signal', data)
+        $socket.emit('signal', { signal: data, to: peerId })
     })
     peer.on('stream', (stream) => {
         console.log('got remote stream', stream)
@@ -79,17 +94,16 @@ onMounted(async () => {
             peers.set(socketData.from, peer)
         }
     })
+
+    //FIXME: duplicate peering user does conn when joining and the other side too via user-joined-call
     $socket.on('join-call', (peerIds : Array<string>) => {
         console.log('join call', peerIds)
         peerIds.forEach(peerId => {
             const peer = createPeer(localStream!, true, peerId)
-            peer.on('signal', (data) => {
-                console.log('sending signal', data)
-                $socket.emit('signal', { signal: data, to: peerId })
-            })
             peers.set(peerId, peer)
         })
     })
+    /*
     $socket.on('user-joined-call', (peerId : string) => {
         console.log('user joined call', peerId)
         const peer = createPeer(localStream!, true, peerId)
@@ -99,10 +113,23 @@ onMounted(async () => {
         })
         peers.set(peerId, peer)
     })
+    */
+    $socket.on('user-left-call', (peerId : string) => {
+        console.log('user left call', peerId)
+        const peer = peers.get(peerId)
+        if (peer) {
+            peer.destroy()
+            peers.delete(peerId)
+            remoteStreams.delete(peerId)
+        }
+    })
+    $socket.emit('join-call', { groupId: props.groupId, serverId: props.serverId })
 })
 onBeforeUnmount(() => {
     $socket.off('signal')
     $socket.off('join-call')
+    //$socket.off('user-joined-call')
+    $socket.off('user-user-left-call')
 })
 </script>
 

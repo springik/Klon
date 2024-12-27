@@ -3,6 +3,7 @@
     import { addConversation, inviteUsers, addCall } from '~/shared/utils/abilities'
 
     const router = useRouter()
+    const snackbar = useSnackbar()
 
     const conversationsOpen = ref<boolean>(false)
     const startX = ref<number | null>(null)
@@ -105,11 +106,13 @@
         $socket.on('call-created', (data : {serverId: string, call: { name: string, members: string[] }}) => {
             if(data.serverId !== props.server.id)
                 return
+
             calls.value?.push(data.call)
             creatingCall.value = false
+            isCallBeingCreated.value = false
         })
         $socket.on('calls-list', (data : { calls: { name: string, members: string[] }[] }) => {
-            console.log('got calls list');
+            console.log('got calls list', data.calls);
 
             calls.value = data.calls
         })
@@ -131,6 +134,11 @@
         } catch (error) {
             inviteLink.value = ''
         }
+        
+        $socket.on('call-exists', (data: { message: string }) => {
+            snackbar.add({ text: data.message, type: 'error' })
+            creatingCall.value = false
+        })
 
         $socket.emit('request-conversations', props.server.id)
         $socket.emit('request-calls', props.server.id)
@@ -146,6 +154,7 @@
         $socket.off('conversation-created')
         $socket.off('call-created')
         $socket.off('calls-list')
+        $socket.off('call-exists')
     })
 </script>
 
@@ -223,7 +232,7 @@
                         <li v-for="(call) in calls" :key="call.name" class="cursor-pointer w-full">
                             <div class="flex items-center justify-between">
                                 <UButton @click="routeToCall(call.name)" block>
-                                    <p>
+                                    <p class="text-white">
                                         {{ call.name }}
                                     </p>
                                     <UBadge color="white" variant="outline">

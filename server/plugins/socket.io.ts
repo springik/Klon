@@ -14,7 +14,7 @@ import { MessageAttachment } from "../models/MessageAttachment.model";
 import { log } from "console";
 
 let users = new Map();
-const groups = new Map<string, Group>();
+const groups = new Map<string, Map<string, Group>>();
 export default defineNitroPlugin((nitroApp: NitroApp) => {
   console.log("Running socket.io plugin");
   const engine = new Engine();
@@ -468,7 +468,17 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         members: []
       }
 
-      groups.set(data.serverId, group)
+      const calls = groups.get(data.serverId) ?? [];
+      calls.forEach((call) => {
+        if(call.name === data.name) {
+          socket.emit('call-exists', { message: 'Call with this name already exists' });
+          return
+        }
+      })
+
+      const serverGroups = groups.get(data.serverId) ?? new Map<string, Group>();
+      serverGroups.set(data.name, group);
+      groups.set(data.serverId, serverGroups);
 
       const members = await ServerMember.findAll({
         where: {
@@ -482,40 +492,58 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       })
     })
 
-    socket.on('join-call', async (data) => {
+    socket.on('join-call', async (data: { groupId: string, serverId: string }) => {
       let receiverSocket : Socket | undefined;
+      console.log(groups)
       try {
         receiverSocket = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
         if(groups.has(data.serverId)) {
-          const group = groups.get(data.serverId);
+          const group = groups.get(data.serverId)?.get(data.groupId);
           group?.members.push(socket.handshake.session.user.id);
 
-          if(group)
-            groups.set(data.serverId, group);
+          if(group) {
+            groups.get(data.serverId)?.set(data.groupId, group);
+          }
+
+          console.log(groups)
         }
         else {
           throw new Error('Group not found');
           //groups.set(data.serverId, [socket.handshake.session.user.id]);
         }
-        const others = (groups.get(data.serverId)?.members ?? []).filter(id => id !== socket.handshake.session.user.id);
+        const peerIds = (groups.get(data.serverId)?.get(data.groupId)?.members ?? []).filter(id => id !== socket.handshake.session.user.id);
 
-        others.forEach((other: string) => {
+        receiverSocket?.emit('join-call', peerIds );
+
+        peerIds.forEach((other: string) => {
           const otherSocket : Socket | undefined = io.sockets.sockets.get(users.get(other));
           if(otherSocket)
             otherSocket.emit('user-joined-call', { peerId: socket.handshake.session.user.id });
         })
-  
-        receiverSocket?.emit('join-call', { peerIds: others });
       } catch (error) {
         console.error(error);
         if(error instanceof Error)
-          if(error.message === 'Group not found')
+          if(error.message === 'Group not found') {
             receiverSocket?.emit('group-not-found', { message: error.message });
+            console.error(error)
+          }
       }
     })
+    //TODO: groups needs to have an array of calls
     socket.on('request-calls', async (serverId) => {
       try {
-        const calls = groups.get(serverId);
+        const serverGroupsMap = groups.get(serverId);
+        const calls: Group[] = [];
+        for(const [key, value] of serverGroupsMap ?? new Map<string, Group>()) {
+          calls.push(value);
+        }
+        console.log(serverGroupsMap);
+        
+
+        console.log(groups);
+        
+        console.log(calls);
+        
         
         const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
         userSocket?.emit('calls-list', { calls: calls ?? [] });
