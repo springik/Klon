@@ -20,6 +20,7 @@
     const inited = ref(false)
     const sharingScreen = ref<boolean>(false)
     const muted = ref<boolean>(false)
+    const waitingForAnswer = ref<boolean>(false)
 
 /*
     const checkMediaDevices = async () : Promise<DeviceCapabilities> => {
@@ -43,8 +44,10 @@
 
     const call = async () => {
         $socket.emit('call-user', { receiverId: props.friendId })
+        waitingForAnswer.value = true
         $socket.on('call-accepted', async () => {
             console.log('call accepted');
+            waitingForAnswer.value = false
             await startCall()
         })
     }
@@ -168,6 +171,7 @@
         const newStream = await navigator.mediaDevices.getUserMedia({ video: hasVideoInput, audio: hasAudioInput })
         peer.streams[0].getVideoTracks()[0].stop()
         peer.replaceTrack(peer.streams[0].getVideoTracks()[0], newStream.getVideoTracks()[0], peer.streams[0])
+        localStream = newStream
         sharingScreen.value = false
     }
     const muteMic = () => {
@@ -219,15 +223,26 @@
 </script>
 
 <template>
-    <div>
-        <UPlaceholder v-if="!localStream" text="Loading..."></UPlaceholder>
-        <video ref="localVideo" autoplay playsinline></video>
-        <UPlaceholder v-if="!remoteStream" text="Loading..."></UPlaceholder>
-        <video ref="remoteVideo" autoplay playsinline></video>
-        <UButton @click="endCall">End Call</UButton>
-        <UButton v-if="!muted" @click="muteMic">Mute</UButton>
-        <UButton v-else @click="muteMic">Unmute</UButton>
-        <UButton v-if="!sharingScreen" @click="shareScreen">Share Screen</UButton>
-        <UButton v-else @click="shareScreen">Share camera</UButton>
+    <div class="relative h-full">
+        <div class="flex flex-row items-center justify-center">
+            <video class="w-1/3 h-64" ref="localVideo" autoplay playsinline></video>
+            <video class="w-1/2 h-96" ref="remoteVideo" autoplay playsinline></video>
+        </div>
+        <div class="absolute bottom-0 right-0 left-1/2 transform -translate-x-1/2 flex space-x-4 justify-center">
+            <UButton @click="endCall">End Call</UButton>
+            <UButton v-if="!muted" @click="muteMic">Mute</UButton>
+            <UButton v-else @click="muteMic">Unmute</UButton>
+            <UButton v-if="!sharingScreen" @click="shareScreen">Share Screen</UButton>
+            <UButton v-else @click="shareScreen">Share camera</UButton>
+        </div>
+        <UModal v-model="waitingForAnswer" prevent-close>
+            <div class="h-32 flex flex-col items-center justify-center space-y-4">
+                <h3>
+                    Waiting for answer
+                </h3>
+                <UProgress animation="carousel" />
+                <UButton @click="endCall">Cancel</UButton>
+            </div>
+        </UModal>
     </div>
 </template>

@@ -32,7 +32,5 @@
 </script>
 
 <template>
-    <div>
-        <Call v-if="friendId !== null || friendId !== undefined" action="accept" :friendId="friendId" :signal="signal" />
-    </div>
+    <Call v-if="friendId !== null || friendId !== undefined" action="accept" :friendId="friendId" :signal="signal" />
 </template>

@@ -26,7 +26,5 @@
 </script>
 
 <template>
-    <div>
-        <Call v-if="friendId !== null || friendId !== undefined" action="initiate" :friendId="friendId" />
-    </div>
+    <Call v-if="friendId !== null || friendId !== undefined" action="initiate" :friendId="friendId" />
 </template>
