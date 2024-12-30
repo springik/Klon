@@ -49,6 +49,7 @@ function endCall() {
 }
 function muteMic() {
     muted.value = !muted.value
+    //localStream.getAudioTracks()[0].enabled = !muted.value
     localStream?.getAudioTracks().forEach(track => track.enabled = !muted.value)
 }
 async function shareScreen() {
@@ -57,8 +58,8 @@ async function shareScreen() {
         peers.forEach(peer => {
             peer.streams[0].getVideoTracks()[0].stop()
             peer.replaceTrack(localStream!.getVideoTracks()[0], screenStream.getVideoTracks()[0], localStream!)
-            peer.replaceTrack(localStream!.getAudioTracks()[0], screenStream.getAudioTracks()[0], localStream!)
             localStream = screenStream
+            localVideo.value!.srcObject = localStream
             sharingScreen.value = true
             return
         })
@@ -70,6 +71,8 @@ async function shareScreen() {
             peer.replaceTrack(peer.streams[0].getVideoTracks()[0], newStream.getVideoTracks()[0], peer.streams[0])
         })
         localStream = newStream
+        localStream.getAudioTracks().forEach(track => track.enabled = !muted.value)
+        localVideo.value!.srcObject = localStream
         sharingScreen.value = false
     }
 }

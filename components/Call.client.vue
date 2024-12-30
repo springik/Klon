@@ -163,6 +163,7 @@
             peer.streams[0].getVideoTracks()[0].stop()
             peer.replaceTrack(peer.streams[0].getVideoTracks()[0], screenStream.getVideoTracks()[0], peer.streams[0])
             localStream = screenStream
+            localVideo.value!.srcObject = localStream
             sharingScreen.value = true
             return
         }
@@ -172,12 +173,15 @@
         peer.streams[0].getVideoTracks()[0].stop()
         peer.replaceTrack(peer.streams[0].getVideoTracks()[0], newStream.getVideoTracks()[0], peer.streams[0])
         localStream = newStream
+        localVideo.value!.srcObject = localStream
+        localStream.getAudioTracks().forEach(track => track.enabled = !muted.value)
         sharingScreen.value = false
     }
     const muteMic = () => {
         if(!localStream)
             return
         localStream.getAudioTracks().forEach(track => track.enabled = !track.enabled)
+        //localStream.getAudioTracks()[0].enabled = !localStream.getAudioTracks()[0].enabled
         muted.value = !muted.value
     }
 
