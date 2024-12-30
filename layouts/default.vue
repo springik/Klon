@@ -1,19 +1,46 @@
 <script setup lang="ts">
   import { useRoute } from 'vue-router'
+  const router = useRouter()
+  const { $socket } = useNuxtApp()
   const route = useRoute()
   const isLoginPage = computed(() => route.path === '/login')
   const isMobile = ref()
   const mobileBreakpoint = 992
+  const callIncoming = ref(false)
+  const incomingData = ref<null | Object>(null)
 
   const onResize = () => {
     isMobile.value = window.innerWidth < mobileBreakpoint
   }
 
-  onMounted(() => {
-    window.addEventListener('resize', onResize)
-  })
+  const acceptCall = () => {
+    console.log('accept call')
+    callIncoming.value = false
+    const path = `/friends/${incomingData.value.other.id}/accept/${true}`
+    console.log(path);
+    router.push(path)
+  }
+  const declineCall = () => {
+    console.log('decline call')
+    $socket.emit('decline-call', incomingData.value)
+    callIncoming.value = false
+  }
   onBeforeUnmount(() => {
     window.removeEventListener('resize', onResize)
+
+    $socket.off('incoming-call')
+  })
+
+  onMounted(() => {
+    if(import.meta.client) {
+      onResize()
+      window.addEventListener('resize', onResize)
+      $socket.on('incoming-call', (data) => {
+        console.log('incoming call', data)
+        callIncoming.value = true
+        incomingData.value = data
+      })
+    }
   })
 
 </script>
@@ -22,6 +49,21 @@
   <main class="h-screen">
     <ClientOnly>
       <Navbar v-if="!isLoginPage"/>
+      <UModal v-model="callIncoming">
+        <template #header>
+          Incoming Call
+        </template>
+        <template #default>
+          <div v-if="incomingData?.other">
+            <UAvatar :src="incomingData.other.avatarUrl" />
+            <p>{{ incomingData.other.username }} is calling you</p>
+            <p>Do you want to accept the call?</p>
+            <UButton @click="declineCall">No</UButton>
+            <UButton @click="acceptCall">Yes</UButton>
+          </div>
+        </template>
+
+      </UModal>
     </ClientOnly>
     <div :class="{ content: !isLoginPage && !isMobile }" class="h-full">
       <slot />

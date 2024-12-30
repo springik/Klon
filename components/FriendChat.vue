@@ -1,4 +1,7 @@
 <script setup lang="ts">
+    import { useRouter } from '#vue-router'
+
+
     const props = defineProps({
         friend: Object
     })
@@ -11,6 +14,7 @@
     const emit = defineEmits(['goBack'])
 
     const { $socket } = useNuxtApp()
+    const router = useRouter()
 
     const sortedMessages = computed(() => {
         return messages.value.sort((a, b) => {
@@ -41,6 +45,10 @@
     }
     const goBack = () => {
         emit('goBack')
+    }
+    const callFriend = () => {
+        console.log('Calling friend');
+        router.push('/friends/' + props.friend.id + '/initiate')
     }
     const sendMessage = () => {
         console.log("sending message");
@@ -106,6 +114,7 @@
             <h3 class="mt-1">
                     Chat with {{ friend.username  }}
             </h3>
+            <UButton label="Call" @click="callFriend" />
         </div>
         <ul class="flex flex-col-reverse h-5/6 overflow-y-auto">
             <MessageDisplay @deleteMessage="onDeleteMessage" @editMessage="onEditMessage" v-for="message in sortedMessages"  :message="message" :key="message.id"></MessageDisplay>

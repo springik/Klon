@@ -1,14 +1,21 @@
 <script setup lang="ts">
     const { $socket } = useNuxtApp()
-    import { addConversation, inviteUsers } from '~/shared/utils/abilities'
+    import { addConversation, inviteUsers, addCall } from '~/shared/utils/abilities'
+
+    const router = useRouter()
+    const snackbar = useSnackbar()
 
     const conversationsOpen = ref<boolean>(false)
     const startX = ref<number | null>(null)
     const conversations = ref<object[] | null>(null)
+    const calls = ref<{ name: string, members: string[] }[] | null>(null)
     const selectedConversation = ref<object | null>(null)
     const creatingConversation = ref<boolean>(false)
+    const creatingCall = ref<boolean>(false)
     const isConversationBeingCreated = ref<boolean>(false)
+    const isCallBeingCreated = ref<boolean>(false)
     const conversationName = ref<string>('')
+    const callName = ref<string>('')
     const inviteLink = ref<string>('')
 
     const emit = defineEmits(['goBack'])
@@ -59,6 +66,17 @@
             startX.value = null
         }
     }
+    const createCall = () => {
+        isCallBeingCreated.value = true
+        $socket.emit('create-call', {
+            name: callName.value,
+            serverId: props.server.id
+        })
+    }
+    const routeToCall = (callName: string) => {
+        console.log('route to call');
+        router.push(`/calls/${props.server.id}/${callName}`)
+    }
 
     onMounted(async () => {
         const container = document.querySelector('.hover-area')
@@ -85,6 +103,19 @@
             conversations.value?.push(conversation)
             creatingConversation.value = false
         })
+        $socket.on('call-created', (data : {serverId: string, call: { name: string, members: string[] }}) => {
+            if(data.serverId !== props.server.id)
+                return
+
+            calls.value?.push(data.call)
+            creatingCall.value = false
+            isCallBeingCreated.value = false
+        })
+        $socket.on('calls-list', (data : { calls: { name: string, members: string[] }[] }) => {
+            console.log('got calls list', data.calls);
+
+            calls.value = data.calls
+        })
 
         try {
             if(await allows(inviteUsers, props.server)) {
@@ -103,8 +134,14 @@
         } catch (error) {
             inviteLink.value = ''
         }
+        
+        $socket.on('call-exists', (data: { message: string }) => {
+            snackbar.add({ text: data.message, type: 'error' })
+            creatingCall.value = false
+        })
 
         $socket.emit('request-conversations', props.server.id)
+        $socket.emit('request-calls', props.server.id)
     })
     onBeforeUnmount(() => {
         const container = document.querySelector('.hover-area')
@@ -114,6 +151,10 @@
         container?.removeEventListener('touchmove', handleTouchMove)
         $socket.off('conversations-list')
         $socket.off('conversation-messages')
+        $socket.off('conversation-created')
+        $socket.off('call-created')
+        $socket.off('calls-list')
+        $socket.off('call-exists')
     })
 </script>
 
@@ -179,6 +220,36 @@
                     </Can>
             </ul>
             </UCard>
+            <UCard :ui="{ divide: 'divide-none', rounded: 'rounded-none' }">
+                <template #header>
+                    <div>
+                        <h3 class="text-lg font-semibold">
+                            Calls
+                        </h3>
+                    </div>
+                </template>
+                    <ul class="overflow-y-auto">
+                        <li v-for="(call) in calls" :key="call.name" class="cursor-pointer w-full">
+                            <div class="flex items-center justify-between">
+                                <UButton @click="routeToCall(call.name)" block>
+                                    <p class="text-white">
+                                        {{ call.name }}
+                                    </p>
+                                    <UBadge color="white" variant="outline">
+                                        {{ call?.members?.length ?? 0 }}
+                                    </UBadge>
+                                </UButton>
+                            </div>
+                        </li>
+                        <Can :ability="addCall" :args="[props.server]">
+                            <li class="mt-4 w-full">
+                                <UButton @click="creatingCall = true" label="Create" block>
+                                    <UIcon name="si:add-circle-line" class="w-5 h-5" />
+                                </UButton>
+                            </li>
+                        </Can>
+                    </ul>
+            </UCard>
         </USlideover>
         <Can :ability="addConversation" :args="[props.server]">
         <UModal v-model="creatingConversation">
@@ -196,5 +267,19 @@
             </UCard>
         </UModal>
         </Can>
+        <UModal v-model="creatingCall">
+            <UCard :ui="{ divide: 'divide-none' }">
+                <template #header>
+                    Create a Call
+                </template>
+                <div class="overflow-y-auto">
+                    <label for="callName">Name:</label>
+                    <UInput name="callName" v-model="callName" placeholder="Enter your call's name" label="Name" class="lg:px-3 px-2 py-2" :model-modifiers="{ trim: true }" />
+                </div>
+                <template #footer>
+                    <UButton :loading="isCallBeingCreated" @click="createCall" label="Create" />
+                </template>
+            </UCard>
+        </UModal>
     </UContainer>
 </template>

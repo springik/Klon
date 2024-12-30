@@ -1,7 +1,7 @@
 import type { NitroApp } from "nitropack";
 import { Server as Engine } from "engine.io";
 import { Server, Socket } from "socket.io";
-import { defineEventHandler } from "h3";
+import { defineEventHandler, use } from "h3";
 import { User } from "../models/User.model";
 import { Friendship } from "../models/FriendshipRequest.model";
 import { Message } from "../models/Message.model";
@@ -14,6 +14,7 @@ import { MessageAttachment } from "../models/MessageAttachment.model";
 import { log } from "console";
 
 let users = new Map();
+const groups = new Map<string, Map<string, Group>>();
 export default defineNitroPlugin((nitroApp: NitroApp) => {
   console.log("Running socket.io plugin");
   const engine = new Engine();
@@ -426,6 +427,115 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
             await transaction.rollback()
         //return createError({ status: 500, statusMessage: 'Something went wrong' })
     }
+    })
+
+    socket.on('call-user', async (data) => {
+      try {
+        const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.receiverId));
+        const callerInstance = await User.findByPk(socket.handshake.session.user.id, { attributes: ['id', 'username', 'avatarUrl'] });
+        receiverSocket?.emit('incoming-call', { other: callerInstance });
+      }
+      catch (error) {
+        console.error(error);
+      }
+    })
+    socket.on('accept-call', async (data) => {
+      const callerSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.to));
+      callerSocket?.emit('call-accepted');
+    })
+    socket.on('passalong-init-signal', async (data) => {
+      const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.to));
+      receiverSocket?.emit('init-signal', { signal: data.signal, from: socket.handshake.session.user.id });
+    })
+    socket.on('decline-call', async (data) => {
+      const callerSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.callerId));
+      callerSocket?.emit('call-declined');
+    })
+    socket.on('end-call', async (data) => {
+      const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.to));
+      receiverSocket?.emit('call-ended');
+    })
+    socket.on('signal', async (data) => {
+      console.log('socket signal', { signal: data.signal });
+      
+      const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.to));
+      receiverSocket?.emit('signal', { signal: data.signal, from: socket.handshake.session.user.id });
+    })
+
+    socket.on('create-call', async (data: { name: string, serverId: string }) => {
+      const group : Group = {
+        name: data.name,
+        members: []
+      }
+
+      const calls = groups.get(data.serverId) ?? [];
+      calls.forEach((call) => {
+        if(call.name === data.name) {
+          socket.emit('call-exists', { message: 'Call with this name already exists' });
+          return
+        }
+      })
+
+      const serverGroups = groups.get(data.serverId) ?? new Map<string, Group>();
+      serverGroups.set(data.name, group);
+      groups.set(data.serverId, serverGroups);
+
+      const members = await ServerMember.findAll({
+        where: {
+          serverId: data.serverId
+        }
+      })
+
+      members.forEach((member) => {
+        const memberSocket : Socket | undefined = io.sockets.sockets.get(users.get(member.userId));
+        memberSocket?.emit('call-created', { serverId: data.serverId, call: group });
+      })
+    })
+
+    socket.on('join-call', async (data: { groupId: string, serverId: string }) => {
+      let receiverSocket : Socket | undefined;
+      try {
+        receiverSocket = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        if(groups.has(data.serverId)) {
+          const group = groups.get(data.serverId)?.get(data.groupId);
+          group?.members.push(socket.handshake.session.user.id);
+
+          if(group) {
+            groups.get(data.serverId)?.set(data.groupId, group);
+          }
+
+          console.log('groups', groups)
+        }
+        else {
+          throw new Error('Group not found');
+          //groups.set(data.serverId, [socket.handshake.session.user.id]);
+        }
+        const peerIds = (groups.get(data.serverId)?.get(data.groupId)?.members ?? []).filter(id => id !== socket.handshake.session.user.id);
+
+        receiverSocket?.emit('join-call', peerIds);
+        console.log('chat members', groups.get(data.serverId)?.get(data.groupId)?.members);
+        
+      } catch (error) {
+        console.error(error);
+        if(error instanceof Error)
+          if(error.message === 'Group not found') {
+            receiverSocket?.emit('group-not-found', { message: error.message });
+            console.error(error)
+          }
+      }
+    })
+    socket.on('request-calls', async (serverId) => {
+      try {
+        const serverGroupsMap = groups.get(serverId);
+        const calls: Group[] = [];
+        for(const [key, value] of serverGroupsMap ?? new Map<string, Group>()) {
+          calls.push(value);
+        }
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        userSocket?.emit('calls-list', { calls: calls ?? [] });
+      } catch (error) {
+        console.error(error);
+      }
     })
 
 

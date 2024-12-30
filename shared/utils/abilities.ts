@@ -10,3 +10,6 @@ export const addConversation = defineAbility((user : User, server : Server) => {
 export const inviteUsers = defineAbility((user : User, server : Server) => {
     return user.id === server.ownerId
 })
+export const addCall = defineAbility((user : User, server : Server) => {
+    return true
+})
