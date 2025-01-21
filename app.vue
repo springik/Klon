@@ -5,6 +5,7 @@
 <template>
   <div>
     <NuxtPwaAssets />
+    <NuxtPwaManifest />
     <NuxtLoadingIndicator />
     <NuxtLayout>
       <NuxtPage />

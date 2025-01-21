@@ -45,6 +45,7 @@ function endCall() {
     remoteStreams.value = {}
     localStream?.getTracks().forEach(track => track.stop())
     localStream = null
+    $socket.emit('leave-call', { groupId: props.groupId, serverId: props.serverId })
     router.push('/servers')
 }
 function muteMic() {
@@ -55,15 +56,17 @@ function muteMic() {
 async function shareScreen() {
     if(!sharingScreen.value) {
         const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
+        console.log("screen stream", screenStream);
         peers.forEach(peer => {
+            console.log("peer", peer)
             peer.streams[0].getVideoTracks()[0].stop()
             peer.replaceTrack(localStream!.getVideoTracks()[0], screenStream.getVideoTracks()[0], localStream!)
-            localStream = screenStream
-            localVideo.value!.srcObject = localStream
-            sharingScreen.value = true
-            return
         })
-
+        localStream = screenStream
+        localVideo.value!.srcObject = localStream
+        sharingScreen.value = true
+        return
+    }
         const { hasAudioInput, hasVideoInput } = await checkMediaDevices()
         const newStream = await navigator.mediaDevices.getUserMedia({ video: hasVideoInput, audio: hasAudioInput })
         peers.forEach(peer => {
@@ -74,7 +77,6 @@ async function shareScreen() {
         localStream.getAudioTracks().forEach(track => track.enabled = !muted.value)
         localVideo.value!.srcObject = localStream
         sharingScreen.value = false
-    }
 }
 
 /** 
@@ -110,7 +112,7 @@ function createPeer(localStream: MediaStream, creator: boolean, peerId: string) 
     })
     peer.on('close', () => {
         console.log('peer closed')
-        peers.delete(peerId)
+        //peers.delete(peerId)
         remoteStreams.value.delete(peerId)
         delete remoteStreams.value[peerId]
     })

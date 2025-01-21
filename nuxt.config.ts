@@ -10,7 +10,7 @@ export default defineNuxtConfig({
     }
   },
   devtools: { enabled: true },
-  compatibilityDate: '2024-09-12',
+  compatibilityDate: '2025-01-21',
   router: {
     options: {
       strict: false
@@ -120,7 +120,8 @@ export default defineNuxtConfig({
     },
 
     workbox: {
-      navigateFallback: '/',
+      //navigateFallback: '/',
+      /*
       runtimeCaching: [
         {
           urlPattern: '/',
@@ -128,6 +129,7 @@ export default defineNuxtConfig({
           method: 'GET'
         }
       ],
+      */
       //globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
       cleanupOutdatedCaches: true,
       clientsClaim: true,

@@ -11,7 +11,6 @@ import { ServerMember } from "../models/ServerMember.model";
 import { Conversation } from "../models/Conversation.model";
 import { FileManager } from "../utils/FileManager";
 import { MessageAttachment } from "../models/MessageAttachment.model";
-import { log } from "console";
 
 let users = new Map();
 const groups = new Map<string, Map<string, Group>>();
@@ -522,6 +521,29 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
             receiverSocket?.emit('group-not-found', { message: error.message });
             console.error(error)
           }
+      }
+    })
+    socket.on('leave-call', async (data: { groupId: string, serverId: string }) => {
+
+      if(groups.has(data.serverId)) {
+        const group = groups.get(data.serverId)?.get(data.groupId);
+        const members = group?.members.filter(id => id !== socket.handshake.session.user.id);
+        group.members = members ?? [];
+        groups.get(data.serverId)?.set(data.groupId, group);
+        try {
+          const serverMembers = await ServerMember.findAll({
+            where: {
+              serverId: data.serverId
+            }
+          })
+          serverMembers.forEach((member) => {
+            const memberSocket : Socket | undefined = io.sockets.sockets.get(users.get(member.userId));
+            memberSocket?.emit('user-left-call', { groupId: data.groupId, members: group?.members });
+          })
+        } catch (error) {
+          console.error(error);
+          
+        }
       }
     })
     socket.on('request-calls', async (serverId) => {
