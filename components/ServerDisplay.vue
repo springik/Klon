@@ -139,6 +139,17 @@
             snackbar.add({ text: data.message, type: 'error' })
             creatingCall.value = false
         })
+        $socket.on('user-left-call', (data: { groupId: string, members: string[] }) => {
+            calls.value = calls.value?.map(call => {
+                if(call.name === data.groupId) {
+                    return {
+                        name: call.name,
+                        members: data.members
+                    }
+                }
+                return call
+            })
+        })
 
         $socket.emit('request-conversations', props.server.id)
         $socket.emit('request-calls', props.server.id)
@@ -155,6 +166,7 @@
         $socket.off('call-created')
         $socket.off('calls-list')
         $socket.off('call-exists')
+        $socket.off('user-left-call')
     })
 </script>
 

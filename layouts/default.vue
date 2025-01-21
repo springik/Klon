@@ -49,7 +49,7 @@
   <main class="h-screen">
     <ClientOnly>
       <Navbar v-if="!isLoginPage"/>
-      <UModal v-model="callIncoming">
+      <UModal prevent-close v-model="callIncoming">
         <template #header>
           Incoming Call
         </template>
