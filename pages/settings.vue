@@ -4,7 +4,6 @@
         description: 'User settings',
         middleware: 'auth'
     })
-    //const avatarFile = ref<File | null>(null);
     const avatarFile = ref<{ file : File, name : string, extension : string } | null>({ file : null, name : null, extension : null })
     const avatar = ref<string>('');
     const changed = ref<boolean>(false)
@@ -16,8 +15,34 @@
         if(changed.value) {
             
             try {
-                $socket.emit('update-user-avatar', avatarFile.value)
+                const formData = new FormData();
+                formData.append('newAvatar', avatarFile.value!.file)
+
+                const data = await $fetch('/api/users/avatar', {
+                    method: 'PUT',
+                    body: formData
+                })
+                console.log(data);
+
+                if(data.status == 200) {
+                    snackbar.add({
+                        text: 'Avatar updated successfully',
+                        type: 'success'
+                    })
+                    user.value.avatarUrl = data.newAvatar
+                }
+                else {
+                    snackbar.add({
+                        text: data.message,
+                        type: 'error'
+                    })
+                }
+                    
             } catch (error) {
+                snackbar.add({
+                    text: error.message,
+                    type: 'error'
+                })
                 console.error(error)
             }
             

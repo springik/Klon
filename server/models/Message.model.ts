@@ -5,6 +5,7 @@ export class Message extends Model {
     declare content: string;
     declare authorId: string;
     declare conversationId: string;
+    declare receiverId: string;
     declare createdAt: Date;
     declare updatedAt: Date;
 
