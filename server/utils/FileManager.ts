@@ -1,19 +1,25 @@
-import { promises as fs } from 'fs';
+import { access, promises as fs } from 'fs';
 import path from 'path';
+import { bucket } from './s3.instance';
 
 export class FileManager {
     /**
-    * Saves file to a specified path under /public
+    * Saves file to a specified path under /public in an S3 bucket
     * @param savePath - Path relative to /public
-    * @param file - The file to save
-    * @returns A promise that resolves when the file is saved
+    * @param file - The file to save (Buffer)
+    * @returns the path to the saved file
     */
-    static async saveFile(savePath: string, file: Buffer): Promise<void> {
+    static async saveFile(fileExtension: string, file: Buffer): Promise<string> {
         try {
-            const fullPath = path.join(process.cwd(), 'public', savePath);
-            await fs.mkdir(path.dirname(fullPath), { recursive: true });
-            await fs.writeFile(fullPath, file)
-            console.log(`Saved file to ${fullPath}`)
+            const fileName = `${crypto.randomUUID()}`
+            const params = {
+                Bucket: bucket,
+                Key: `public/${fileName}.${fileExtension}`,
+                Body: file,
+                accessControl: 'public-read'
+            }
+            const data = await s3.upload(params).promise()
+            return data.Location
         } catch (error) {
             console.error(error)
             throw error

@@ -29,7 +29,6 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       let transaction : Transaction | null = null;
       try {
         transaction = await sequelize.transaction();
-        //console.log(data);
         if(data.receiverId !== null) {
           const message = await Message.create({
           authorId: socket.handshake.session.user.id,
@@ -39,20 +38,18 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         });
 
         if(data.attachment) {
-          //const attachments : MessageAttachment[] = [];
-          data.attachment.forEach(async (attachment : { file : Buffer, name : string, extension : string }) => {
-            const attachmentPath = `/attachments/${attachment.name}.${attachment.extension}`;
-            await FileManager.saveFile(attachmentPath, attachment.file);
-            await MessageAttachment.create({
+          const attachmentPromise = data.attachment.map(async (attachment : { file : Buffer, name : string, extension : string }) => {
+            const location = await FileManager.saveFile(attachment.extension, attachment.file);
+            return await MessageAttachment.create({
               messageId: message.dataValues.id,
-              contentUrl: attachmentPath
+              contentUrl: location
             , transaction
             })
           })
+          await Promise.all(attachmentPromise);
         }
         
         await transaction.commit();
-
         await message.reload({
           include: [{
             model: User,
@@ -61,12 +58,30 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
             model: MessageAttachment,
             as: 'attachments'
           }]
-        });
+        })
+
+        /*
+        const attachments = await MessageAttachment.findAll({
+          where: {
+            messageId: message.id
+          }
+        })
+        */
+        const updatedMessage = {
+          id: message.id,
+          authorId: message.authorId,
+          receiverId: message.receiverId,
+          content: message.content,
+          createdAt: message.createdAt,
+          updatedAt: message.updatedAt,
+          author: message.author,
+          attachments: message.attachments
+        }
 
         const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.receiverId));
         const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
-        userSocket?.emit('message', message);
-        receiverSocket?.emit('message', message);
+        userSocket?.emit('message', updatedMessage);
+        receiverSocket?.emit('message', updatedMessage);
         }
         else if(data.conversationId !== null) {
           
@@ -77,21 +92,18 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
           , transaction});
 
           if(data.attachment) {
-            const attachments : MessageAttachment[] = [];
-            data.attachment.forEach(async (attachment : { file : Buffer, name : string, extension : string }) => {
-              const attachmentPath = `/attachments/${attachment.name}.${attachment.extension}`;
-              await FileManager.saveFile(attachmentPath, attachment.file);
-              const messageAttachment = await MessageAttachment.create({
+            const attachmentPromise = data.attachment.map(async (attachment : { file : Buffer, name : string, extension : string }) => {
+              const location = await FileManager.saveFile(attachment.extension, attachment.file);
+              return await MessageAttachment.create({
                 messageId: message.dataValues.id,
-                contentUrl: attachmentPath
+                contentUrl: location
               , transaction
               })
-              attachments.push(messageAttachment);
             })
+            await Promise.all(attachmentPromise);
           }
 
           await transaction.commit();
-  
           await message.reload({
             include: [{
               model: User,
@@ -100,11 +112,25 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
               model: MessageAttachment,
               as: 'attachments'
             }]
-          });
-          //console.log(message);
+          })
           
-          //const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
-          //userSocket?.emit('message', message);
+          /*
+          const attachments = await MessageAttachment.findAll({
+            where: {
+              messageId: message.id
+            }
+          })
+          */
+          const updatedMessage = {
+            id: message.id,
+            authorId: message.authorId,
+            receiverId: message.receiverId,
+            content: message.content,
+            createdAt: message.createdAt,
+            updatedAt: message.updatedAt,
+            author: message.author,
+            attachments: message.attachments
+          }
   
           const conversation = await Conversation.findByPk(data.conversationId);
           if(conversation) {
@@ -115,7 +141,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
             })
             serverMembers.forEach(async (member) => {
               const memberSocket : Socket | undefined = io.sockets.sockets.get(users.get(member.userId));
-              memberSocket?.emit('message', message);
+              memberSocket?.emit('message', updatedMessage);
             })
           }
         }
@@ -282,9 +308,9 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
 
         let avatarUrl = '/servers/default.webp';
         if(serverData.avatar) {
-          const avatarPath = `/servers/avatars/${serverData.name}.webp`
-          await FileManager.saveFile(avatarPath, serverData.avatar);
-          avatarUrl = `${avatarPath}`
+          //const avatarPath = `/servers/avatars/${serverData.name}.webp`
+          const location = await FileManager.saveFile('webp', serverData.avatar);
+          avatarUrl = location
         }
         const server = await ServerModel.create({
           name: serverData.name,
@@ -412,10 +438,10 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         if(!userInstance) {
             throw new Error('User Instance not found error')
         }
-        userInstance.avatarUrl = avatarPath
-        user.avatarUrl = avatarPath
         
-        await FileManager.saveFile(avatarPath, newAvatar.file)
+        const location = await FileManager.saveFile('webp', newAvatar.file)
+        user.avatarUrl = location
+        userInstance.avatarUrl = location
         await userInstance?.save({ transaction })
         await transaction.commit()
         const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
