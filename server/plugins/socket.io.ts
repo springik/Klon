@@ -84,12 +84,12 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         receiverSocket?.emit('message', updatedMessage);
         }
         else if(data.conversationId !== null) {
-          
+          console.log('Got conversation message request');
           const message = await Message.create({
             authorId: socket.handshake.session.user.id,
             conversationId: data.conversationId,
             content: data.content
-          , transaction});
+          , transaction });
 
           if(data.attachment) {
             const attachmentPromise = data.attachment.map(async (attachment : { file : Buffer, name : string, extension : string }) => {
@@ -113,18 +113,11 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
               as: 'attachments'
             }]
           })
-          
-          /*
-          const attachments = await MessageAttachment.findAll({
-            where: {
-              messageId: message.id
-            }
-          })
-          */
+
           const updatedMessage = {
             id: message.id,
             authorId: message.authorId,
-            receiverId: message.receiverId,
+            conversationId: message.conversationId,
             content: message.content,
             createdAt: message.createdAt,
             updatedAt: message.updatedAt,
@@ -139,10 +132,16 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
                 serverId: conversation.serverId
               }
             })
-            serverMembers.forEach(async (member) => {
+            //console.log(serverMembers);
+            const smPromise = serverMembers.map(async (member) => {
               const memberSocket : Socket | undefined = io.sockets.sockets.get(users.get(member.userId));
-              memberSocket?.emit('message', updatedMessage);
+              if(!memberSocket)
+                console.log('Member socket not found');
+              //console.log(memberSocket);
+              else
+                memberSocket.emit('message', updatedMessage);
             })
+            await Promise.all(smPromise);
           }
         }
       } catch (error) {

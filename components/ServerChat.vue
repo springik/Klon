@@ -72,9 +72,12 @@
 
     onMounted(() => {
         $socket.on('message', (message) => {
+            console.log('message received');
             console.log(message);
-            if(message.conversationId !== props.conversation.id)
+            if(message.conversationId !== props.conversation.id) {
+                loading.value = false
                 return
+            }
             props.conversation.messages.push(message)
             loading.value = false
         })
