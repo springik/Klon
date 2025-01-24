@@ -25,7 +25,7 @@
     const sendMessage = () => {
         console.log("sending message");
         loading.value = true
-        if(messageInput.value === '')
+        if(messageInput.value === '' && !messageAttachments.value || messageAttachments.value.length === 0)
             return
         $socket.emit('send-message', { content: messageInput.value, conversationId: props.conversation.id, receiverId: null, attachment: messageAttachments.value })
         messageInput.value = ''
