@@ -8,6 +8,8 @@ import { ServerMember } from "../models/ServerMember.model";
 import { ServerInvite } from "../models/ServerInvite";
 import { FriendshipInvite } from "../models/FriendshipInvite.model";
 import { MessageAttachment } from "../models/MessageAttachment.model";
+import { Poll } from "../models/Poll.model";
+import { PollEntry } from "../models/PollEntry.model";
 
 
 export default defineNitroPlugin(async (nitro) => {
@@ -39,4 +41,6 @@ function registerModels() {
     sequelize.modelManager.addModel(ServerInvite)
     sequelize.modelManager.addModel(FriendshipInvite)
     sequelize.modelManager.addModel(MessageAttachment)
+    sequelize.modelManager.addModel(Poll)
+    sequelize.modelManager.addModel(PollEntry)
 }

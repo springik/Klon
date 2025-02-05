@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { UPopover } from '#components'
+import { log } from 'console'
+
     const props = defineProps({
         conversation: Object
     })
@@ -7,6 +10,10 @@
     const loading = ref<boolean>(false)
     const messageAttachments = ref<{ file : File, name : string, extension : string }[] | null>(null)
     const fileInput = ref<HTMLInputElement | null>(null)
+    const creatingPoll = ref<boolean>(false)
+    const question = ref<string>('')
+    const options = ref<string[]>([])
+    const optionsCount = ref<string[]>(['1', '2', '3'])
 
     const emit = defineEmits(['goBack'])
 
@@ -15,9 +22,10 @@
     const sortedMessages = computed(() => {
         if(!props.conversation)
             return []
-        if(!props.conversation.messages || props.conversation.messages.length === 0)
+        if(!props.conversation.messages || props.conversation.messages.length === 0 || !props.conversation.polls || props.conversation.polls.length === 0)
             return []
-        return props?.conversation?.messages.sort((a, b) => {
+        const combined = [...props.conversation.messages, ...props.conversation.polls]
+        return combined.sort((a, b) => {
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         })
     })
@@ -69,6 +77,32 @@
         console.log(attachment);
         return URL.createObjectURL(attachment.file)
     }
+    const createPoll = () => {
+        console.log('creating poll');
+        creatingPoll.value = true
+    }
+    const addOption = () => {
+        optionsCount.value.push((optionsCount.value.length + 1).toString())
+    }
+    const changeOptionValue = (event: InputEvent, index: number) => {
+        console.log('changing option value');
+        //console.log('event', event);
+        options.value[index] = (event.target as HTMLInputElement).value
+    }
+    const cancelPollCreation = () => {
+        creatingPoll.value = false
+        question.value = ''
+        options.value = []
+    }
+    const finalisePoll = () => {
+        console.log('finalising poll');
+        creatingPoll.value = false
+        $socket.emit('create-poll', { serverId: props.conversation?.serverId, conversationId: props.conversation?.id, poll: { question: question.value, options: options.value } })
+    }
+    const removeOption = (index: number) => {
+        optionsCount.value.splice(index, 1)
+        options.value.splice(index, 1)
+    }
 
     onMounted(() => {
         $socket.on('message', (message) => {
@@ -88,6 +122,47 @@
             const index = props.conversation.messages.findIndex(m => m.id === message.id)
             props.conversation.messages[index].content = message.content
             props.conversation.messages[index].updatedAt = message.updatedAt
+        })
+        $socket.on('poll-deleted', (pollId: string) => {
+            props.conversation.polls = props?.conversation?.polls?.filter(p => p.id !== pollId)
+        })
+        $socket.on('poll-voted', async (data: { pollEntry: object, lastOption: number | null}) => {
+            log('last option', data.lastOption);
+            props.conversation?.polls?.forEach(p => {
+                if(!p || !p.optionCounts)
+                    return
+                if(p.id !== data.pollEntry.pollId)
+                    return
+
+                if(!p.voted)
+                    p.totalVotes++
+
+                p.voted = data.pollEntry
+                if(!p.optionCounts[data.pollEntry.option]) {
+                    p.optionCounts[data.pollEntry.option] = { count: 1, option: data.pollEntry.option }
+                    log('last option entry did not exist before', data.lastOption);
+                    if(data.lastOption)
+                        p.optionCounts[data.lastOption].count--
+                }
+                else {
+                    p.optionCounts[data.pollEntry.option].count++
+                    log('last option already existed entry', data.lastOption);
+                    p.optionCounts[data.lastOption].count--
+                }
+            });
+            await nextTick()
+        })
+        $socket.on('poll-vote', async (data: { pollId: string, option: number, lastOption: number | null }) => {
+            log('last option', data.lastOption);
+            const poll = props.conversation?.polls?.find(p => p.id === data.pollId)
+            if(!data.lastOption)
+                poll.optionCounts[data.option].count++
+            else {
+                poll.optionCounts[data.option].count++
+                poll.optionCounts[data.lastOption].count--
+            }
+
+            await nextTick()
         })
     })
 
@@ -129,15 +204,55 @@
                 </ul>
             </div>
             <div class="flex">
-                <UButton @click="addAttachment" label="Add attachment">
-                    <UIcon class="w-5 h-5" name="si:add-circle-line" />
-                </UButton>
+                <UPopover overlay :popper="{ placement: 'top-start', offsetDistance: 0 }">
+                    <UButton label="+">
+                        <UIcon class="w-8 h-8" name="si:add-circle-line" />
+                    </UButton>
+                    <template #panel>
+                        <div class="flex flex-col gap-y-2 bg-gray-800 p-2 rounded-lg">
+                            <UButton @click="createPoll" label="Create poll" trailing-icon="si:dashboard-customize-duotone">
+                            </UButton>
+                            <UButton @click="addAttachment" label="Add attachment" trailing-icon="si:file-upload-fill">
+                            </UButton>
+                        </div>
+                    </template>
+                </UPopover>
                 <input multiple accept="image/webp, image/jpeg, image/png, .docx, .pdf, .pptx, .txt, text/*" type="file" ref="fileInput" class="hidden" @change="handleFileChange">
                 <UTextarea autoresize v-model="messageInput" class="w-full" :rows="1" size="xl" :maxrows="3" placeholder="Chat..." variant="outline" :model-modifiers="{ trim: true }"/>
                 <UButton :loading="loading" class="cursor-pointer" label="Send message" size="md" @click="sendMessage">
-                    <UIcon class="w-5 h-5" name="si:north-east-circle-line" />
+                    <UIcon class="w-8 h-8" name="si:north-east-circle-line" />
                 </UButton>
             </div>
         </UContainer>
+        <UModal v-model="creatingPoll" class="bg-gray-800 p-6" :ui="{ rounded: 'rounded-lg' }">
+            <UCard :ui="{ rounded: 'rounded-lg', divide: 'divide-none' }">
+                <template #header>
+                    <h3 class="text-lg">Create poll</h3>
+                </template>
+                <label for="question-input">Question</label>
+                <UInput v-model="question" name="question-input" size="xl" />
+                <ul class="overflow-y-auto my-1 mx-2 flex flex-col gap-y-4">
+                    <li class="flex justify-center items-center gap-x-2" v-for="(option, index) in optionsCount" :key="index">
+                        <div class="flex-1">
+                            <label :for="option + index">Option {{ index + 1 }}</label>
+                            <UInput v-model="options[index]" @input="changeOptionValue($event, index)" :name="option + index" />
+                        </div>
+                        <div class="mt-6">
+                            <UButton @click="removeOption(index)" icon="si:close-circle-line" />
+                        </div>
+                    </li>
+                    <li>
+                        <UButton block @click="addOption" label="Add option" />
+                    </li>
+                </ul>
+
+                <template #footer>
+                    <div class="flex gap-x-2 justify-between">
+                        <UButton @click="cancelPollCreation" label="Cancel" />
+                        <UButton @click="finalisePoll" label="Create" />
+                    </div>
+                </template>
+            </UCard>
+        </UModal>
     </UContainer>
 </template>

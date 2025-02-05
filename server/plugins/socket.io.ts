@@ -4,13 +4,17 @@ import { Server, Socket } from "socket.io";
 import { defineEventHandler, use } from "h3";
 import { User } from "../models/User.model";
 import { Friendship } from "../models/FriendshipRequest.model";
+import { Poll } from "../models/Poll.model";
+import { PollEntry } from "../models/PollEntry.model";
 import { Message } from "../models/Message.model";
 import { Server as ServerModel } from "../models/Server.model";
-import { Op, Transaction } from "sequelize";
+import { fn, col, Op, Transaction, literal, QueryTypes } from "sequelize";
 import { ServerMember } from "../models/ServerMember.model";
 import { Conversation } from "../models/Conversation.model";
 import { FileManager } from "../utils/FileManager";
 import { MessageAttachment } from "../models/MessageAttachment.model";
+import executeQueryFromFile, { QueryName } from "../utils/executeQueryFromFile";
+import { log } from "console";
 
 let users = new Map();
 const groups = new Map<string, Map<string, Group>>();
@@ -398,27 +402,55 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
     })
     socket.on('request-conversation-messages', async (conversationId : string) => {
       try {
-        const messagesBare = await Message.findAll({
+        const messages = await Message.findAll({
+          where: {
+            conversationId
+          },
+          include: [{
+            model: User,
+            as: 'author'
+          }, {
+            model: MessageAttachment,
+            as: 'attachments'
+          }]
+        })
+        const polls = await Poll.findAll({
           where: {
             conversationId
           }
         })
-        const messages = await Promise.all(messagesBare.map(async (message) => {
-          await message.reload({
-            include: [{
-              model: User,
-              as: 'author'
-            }, {
-              model: MessageAttachment,
-              as: 'attachments'
-            }]
+        const pollsWithOptions = await Promise.all(polls.map(async (poll) => {
+          const optionCounts = await PollEntry.findAll({
+            where: {
+              pollId: poll.id
+            },
+            attributes: ['option', [fn('COUNT', col('option')), 'count']],
+            group: ['option']
           })
-          return message;
-        })
-        )
+          let oCTranformed = []
+          for(const option of optionCounts) {
+            oCTranformed[option.option] = option
+          }
+          console.log(oCTranformed);
+          
+          const totalVotes = await PollEntry.count({
+            where: {
+              pollId: poll.id
+            }
+          })
+          const voted = await PollEntry.findOne({
+            where: {
+              pollId: poll.id,
+              voterId: socket.handshake.session.user.id
+            }
+          })
+          return { id: poll.id, question: poll.question, options: poll.options, conversationId: poll.conversationId, createdAt: poll.createdAt, updatedAt: poll.updatedAt, voted, optionCounts: oCTranformed, totalVotes }
+        }))
+        console.log(pollsWithOptions);
+
         const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
         if(messages)
-          userSocket.emit('conversation-messages', messages);
+          userSocket.emit('conversation-messages', { messages, polls: pollsWithOptions });
         else
           userSocket.emit('conversation-messages', []);
       } catch (error) {
@@ -583,6 +615,115 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       } catch (error) {
         console.error(error);
       }
+    })
+    socket.on('create-poll', async (data: { serverId: string, conversationId: string, poll: { question: string, options: string[] } }) => {
+      const poll = await Poll.create({
+        question: data.poll.question,
+        options: data.poll.options,
+        conversationId: data.conversationId
+      })
+      const serverMembers = await ServerMember.findAll({
+        where: {
+          serverId: data.serverId
+        }
+      })
+      serverMembers.forEach(async (member) => {
+        const memberSocket : Socket | undefined = io.sockets.sockets.get(users.get(member.userId));
+        memberSocket?.emit('poll-created', poll);
+      })
+    })
+
+    socket.on('vote-in-poll', async (data: { pollId: string, option: number }) => {
+      console.log('voting in poll');
+      
+      const poll = await Poll.findByPk(data.pollId, {
+        include: [{
+          model: Conversation,
+          as: 'conversation',
+        }]
+      });
+      console.log(poll);
+      if(!poll) {
+        const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+        userSocket?.emit('errr', { message: 'Poll not found' });
+      }
+
+      const pollEntry = await PollEntry.findOne({
+        where: {
+          pollId: data.pollId,
+          voterId: socket.handshake.session.user.id
+        }
+      })
+      log('Poll entry', pollEntry);
+      if(pollEntry) {
+        const lastOption = pollEntry.option;
+        pollEntry.option = data.option;
+        await pollEntry.save();
+        const serverMembers = await ServerMember.findAll({
+          where: {
+            serverId: poll.conversation.serverId
+          }
+        })
+
+        serverMembers.forEach(async (member) => {
+          const memberSocket : Socket | undefined = io.sockets.sockets.get(users.get(member.userId));
+          if(member.userId === socket.handshake.session.user.id) {
+            memberSocket?.emit('poll-voted', { pollEntry, lastOption });
+            return
+          }
+          memberSocket?.emit('poll-vote', { pollId: data.pollId, option: data.option, lastOption });
+        })
+      }
+      else {
+        const pollEntry = await PollEntry.create({
+          pollId: data.pollId,
+          voterId: socket.handshake.session.user.id,
+          option: data.option
+        })
+        const serverMembers = await ServerMember.findAll({
+          where: {
+            serverId: poll.conversation.serverId
+          }
+        })
+
+        serverMembers.forEach(async (member) => {
+          const memberSocket : Socket | undefined = io.sockets.sockets.get(users.get(member.userId));
+          if(member.userId === socket.handshake.session.user.id) {
+            memberSocket?.emit('poll-voted', { pollEntry, lastOption: null });
+            return
+          }
+          memberSocket?.emit('poll-vote', { pollId: data.pollId, option: data.option, lastOption: null });
+        })
+      }
+
+    })
+    socket.on('delete-poll', async (data: { pollId: string }) => {
+      log('Deleting poll');
+      const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+      const poll = await Poll.findByPk(data.pollId,
+        {
+          include: [
+          {
+            model: Conversation,
+            as: 'conversation',
+          }
+        ]
+        }
+      );
+      if(!poll) {
+        userSocket?.emit('errr', { message: 'Poll not found' });
+        return
+      }
+      const serverMembers = await ServerMember.findAll({
+        where: {
+          serverId: poll.conversation.serverId
+        }
+      })
+      serverMembers.forEach(async (member) => {
+        const memberSocket : Socket | undefined = io.sockets.sockets.get(users.get(member.userId));
+        memberSocket?.emit('poll-deleted', data.pollId);
+      })
+      await poll.destroy();
     })
 
 
