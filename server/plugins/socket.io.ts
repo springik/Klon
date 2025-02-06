@@ -725,7 +725,74 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       })
       await poll.destroy();
     })
-
+    socket.on('send-gif-to-friend', async (data: { receiverId: string, gifUrl: string }) => {
+      const message = await Message.create({
+        authorId: socket.handshake.session.user.id,
+        receiverId: data.receiverId,
+        tenorGif: data.gifUrl
+      });
+      await message.reload({
+        include: [{
+          model: User,
+          as: 'author'
+        },{
+          model: MessageAttachment,
+          as: 'attachments'
+        }]
+      })
+      const updatedMessage = {
+        id: message.id,
+        authorId: message.authorId,
+        receiverId: message.receiverId,
+        content: message.content,
+        createdAt: message.createdAt,
+        updatedAt: message.updatedAt,
+        author: message.author,
+        attachments: message.attachments,
+        tenorGift: message.tenorGif
+      }
+      const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+      userSocket?.emit('message', updatedMessage);
+      const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.receiverId));
+      receiverSocket?.emit('message', updatedMessage);
+    })
+    socket.on('send-gif-to-conversation', async (data: { conversationId: string, gifUrl: string }) => {
+      const message = await Message.create({
+        authorId: socket.handshake.session.user.id,
+        conversationId: data.conversationId,
+        tenorGif: data.gifUrl
+      })
+      await message.reload({
+        include: [{
+          model: User,
+          as: 'author'
+        },{
+          model: MessageAttachment,
+          as: 'attachments'
+        }]
+      })
+      const updatedMessage = {
+        id: message.id,
+        authorId: message.authorId,
+        conversationId: message.conversationId,
+        content: message.content,
+        createdAt: message.createdAt,
+        updatedAt: message.updatedAt,
+        author: message.author,
+        attachments: message.attachments,
+        tenorGif: message.tenorGif
+      }
+      const conversation = await Conversation.findByPk(data.conversationId);
+      const serverMembers = await ServerMember.findAll({
+        where: {
+          serverId: conversation?.serverId
+        }
+      })
+      const smPromise = serverMembers.forEach(async (member) => {
+        const memberSocket : Socket | undefined = io.sockets.sockets.get(users.get(member.userId));
+        memberSocket?.emit('message', updatedMessage);
+      })
+    })
 
     socket.on('test-event', (data) => {
         console.log(data);

@@ -82,7 +82,53 @@ const emit = defineEmits(['editMessage', 'deleteMessage'])
 
 <template>
 <li class="py-2 px-1 flex items-center hover:bg-gray-900 relative">
-    <UCard v-if="!message?.question" :ui="{ divide: 'dark:divide-none divide-none divide-transparent divide-y-0', base: 'border-none', body: { padding: 'px-1 py-1 sm:p-2' }, header: { padding: 'px-1 py-1 sm:p-2' }, footer: { padding: 'px-1 py-1 sm:p-2' }, background: 'bg-transparent dark:bg-transparent', ring: 'dark:ring-transparent ring-transparent' }">
+    <UCard v-if="message?.tenorGif" :ui="{ divide: 'dark:divide-none divide-none divide-transparent divide-y-0', base: 'border-none', body: { padding: 'px-1 py-1 sm:p-2' }, header: { padding: 'px-1 py-1 sm:p-2' }, footer: { padding: 'px-1 py-1 sm:p-2' }, background: 'bg-transparent dark:bg-transparent', ring: 'dark:ring-transparent ring-transparent' }">
+        <template #header>
+            <div class="flex items-center">
+                <UAvatar :src="message.author.avatarUrl" :alt="message.author.name" />
+                <span class="text-white antialiased font-semibold ml-2 text-center mb-1">
+                    {{ message.author.username }}
+                </span>
+            </div>
+        </template>
+        <img :src="message?.tenorGif" :alt="message.content" />
+        <template #footer>
+            <div class="flex justify-between items-center lg:gap-2">
+                <span class="mb-1 mx-1 text-white">{{ postTime }}</span>
+                <div class="gap-2 flex">
+                <UButton label="Delete" @click="deleteMessage" v-if="session.user.id == message.author.id">
+                    <UIcon class="w-5 h-5" name="si:archive-alt-line" />
+                </UButton>
+                </div>
+            </div>
+        </template>
+    </UCard>
+
+    <UCard v-else-if="message?.question" :ui="{ divide: 'dark:divide-none divide-none divide-transparent divide-y-0', base: 'border-none', body: { padding: 'px-1 py-1 sm:p-2' }, header: { padding: 'px-1 py-1 sm:p-2' }, footer: { padding: 'px-1 py-1 sm:p-2' }, background: 'bg-transparent dark:bg-transparent', ring: 'dark:ring-transparent ring-transparent' }">
+        <template #header>
+            <h2>
+                {{ message.question }}
+            </h2>
+        </template>
+
+        <ul>
+            <li v-for="(option, index) in message.options" :key="index">
+                <UButton :variant="message.voted?.option === index ? 'solid' : 'outline'" block @click="voteForOption(message.id, index)" :label="option" />
+                <UProgress v-if="votedAlready" :max="message.totalVotes ?? 0" :value="message.optionCounts[index]?.count ?? 0" />
+            </li>
+        </ul>
+
+        <template #footer>
+            <div>
+                <p>
+                    {{  message.totalVotes }} votes
+                </p>
+                <UButton icon="si:archive-alt-line" @click="deletePoll(message.id)" />
+            </div>
+        </template>
+    </UCard>
+
+    <UCard v-else :ui="{ divide: 'dark:divide-none divide-none divide-transparent divide-y-0', base: 'border-none', body: { padding: 'px-1 py-1 sm:p-2' }, header: { padding: 'px-1 py-1 sm:p-2' }, footer: { padding: 'px-1 py-1 sm:p-2' }, background: 'bg-transparent dark:bg-transparent', ring: 'dark:ring-transparent ring-transparent' }">
         <template #header>
             <div class="flex items-center">
                 <UAvatar :src="message.author.avatarUrl" :alt="message.author.name" />
@@ -122,29 +168,6 @@ const emit = defineEmits(['editMessage', 'deleteMessage'])
                     <UIcon class="w-5 h-5" name="si:archive-alt-line" />
                 </UButton>
                 </div>
-            </div>
-        </template>
-    </UCard>
-    <UCard v-else :ui="{ divide: 'dark:divide-none divide-none divide-transparent divide-y-0', base: 'border-none', body: { padding: 'px-1 py-1 sm:p-2' }, header: { padding: 'px-1 py-1 sm:p-2' }, footer: { padding: 'px-1 py-1 sm:p-2' }, background: 'bg-transparent dark:bg-transparent', ring: 'dark:ring-transparent ring-transparent' }">
-        <template #header>
-            <h2>
-                {{ message.question }}
-            </h2>
-        </template>
-
-        <ul>
-            <li v-for="(option, index) in message.options" :key="index">
-                <UButton :variant="message.voted.option === index ? 'solid' : 'outline'" block @click="voteForOption(message.id, index)" :label="option" />
-                <UProgress v-if="votedAlready" :max="message.totalVotes ?? 0" :value="message.optionCounts[index]?.count ?? 0" />
-            </li>
-        </ul>
-
-        <template #footer>
-            <div>
-                <p>
-                    {{  message.totalVotes }} votes
-                </p>
-                <UButton icon="si:archive-alt-line" @click="deletePoll(message.id)" />
             </div>
         </template>
     </UCard>

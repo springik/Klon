@@ -14,6 +14,14 @@ import { log } from 'console'
     const question = ref<string>('')
     const options = ref<string[]>([])
     const optionsCount = ref<string[]>(['1', '2', '3'])
+    const gifUiOpen = ref<boolean>(false)
+    const gifs = ref<object[]>([])
+    const gifCategories = ref<object[]>([])
+    const categoryGifs = ref<object>({}) // like a map
+    //@ts-expect-error
+    const gifUiStage = ref<GifUiStage>('CHOOSING_CATEGORY')
+    const chosenCategory = ref<object | null>(null)
+    const gifSearch = ref<string>('')
 
     const emit = defineEmits(['goBack'])
 
@@ -29,6 +37,55 @@ import { log } from 'console'
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         })
     })
+    const openGifUi = async () => {
+        const { data, error } = await useFetch('/api/tenor/trending')
+        if(error.value) {
+            console.error(error.value)
+            return
+        }
+        console.log(data.value);
+        gifCategories.value = data.value
+        // @ts-expect-error
+        gifUiStage.value = 'CHOOSING_CATEGORY'
+        gifUiOpen.value = true
+    }
+    const chooseGifCategory = async (category: object) => {
+        const { data, error } = await useFetch(`/api/tenor/getGifsForCategory?searchterm=${category.searchterm}`)
+        if(error.value) {
+            console.error(error.value)
+            return
+        }
+        console.log(data.value);
+        // @ts-expect-error
+        categoryGifs.value = data.value.gifs
+        // @ts-expect-error
+        gifUiStage.value = 'CHOOSING_GIF'
+        chosenCategory.value = category
+
+    }
+    const sendGif = (gif: object) => {
+        console.log(gif);
+        const gifUrl = gif.media_formats.gif.url
+
+        $socket.emit('send-gif-to-conversation', { gifUrl, conversationId: props.conversation.id })
+    }
+    const closeGifUi = () => {
+        gifUiOpen.value = false
+        // @ts-expect-error
+        gifUiStage.value = 'CHOOSING_CATEGORY'
+    }
+    const goBackInGifUi = () => {
+        if(gifUiStage.value === 'CHOOSING_GIF') {
+            // @ts-expect-error
+            gifUiStage.value = 'CHOOSING_CATEGORY'
+            chosenCategory.value = null
+            categoryGifs.value = []
+        } else if(gifUiStage.value === 'SEARCHING_GIF') {
+            // @ts-expect-error
+            gifUiStage.value = 'CHOOSING_CATEGORY'
+            gifs.value = []
+        }
+    }
 
     const sendMessage = () => {
         console.log("sending message");
@@ -204,16 +261,38 @@ import { log } from 'console'
                 </ul>
             </div>
             <div class="flex">
-                <UPopover overlay :popper="{ placement: 'top-start', offsetDistance: 0 }">
+                <UPopover @update:open="closeGifUi" overlay :popper="{ placement: 'top-start', offsetDistance: 0 }" :ui="{ background: 'bg-gray-800', border: 'border-none', rounded: 'rounded-lg' }">
                     <UButton label="+">
                         <UIcon class="w-8 h-8" name="si:add-circle-line" />
                     </UButton>
-                    <template #panel>
+                    <template v-if="!gifUiOpen" #panel>
                         <div class="flex flex-col gap-y-2 bg-gray-800 p-2 rounded-lg">
-                            <UButton @click="createPoll" label="Create poll" trailing-icon="si:dashboard-customize-duotone">
+                            <UButton block @click="createPoll" label="Create poll" trailing-icon="si:dashboard-customize-duotone">
                             </UButton>
-                            <UButton @click="addAttachment" label="Add attachment" trailing-icon="si:file-upload-fill">
+                            <UButton block @click="openGifUi" label="Share gif" trailing-icon="si:window-line" />
+                            <UButton block @click="addAttachment" label="Add attachment" trailing-icon="si:file-upload-fill">
                             </UButton>
+                        </div>
+                    </template>
+                    <template v-else #panel>
+                        <div class="flex flex-row p-2 rounded-lg">
+                            <UButton variant="ghost" v-if="gifUiStage != 'CHOOSING_CATEGORY'" @click="goBackInGifUi" trailing-icon="si:arrow-left-line" />
+                            <UButton variant="ghost" v-else @click="closeGifUi" trailing-icon="si:close-circle-line" />
+                            <UInput class="flex-1" v-model="gifSearch" placeholder="Search gifs" leading-icon="si:search-line" />
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 p-2 rounded-lg overflow-y-auto h-64">
+                            <div v-if="gifUiStage == 'CHOOSING_CATEGORY'" @click="chooseGifCategory(category)" v-for="category in gifCategories" :key="category.name" class="relative cursor-pointer lg:h-48 h-32 lg:w-48 w-32">
+                                <img class="lg:h-48 h-32 lg:w-48 w-32" :src="category.image" :alt="category.name" />
+                                <div class="uppercase text-center absolute bottom-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                                    {{ category.searchterm }}
+                                </div>
+                            </div>
+                            <div v-else-if="gifUiStage == 'CHOOSING_GIF'" v-for="gif in categoryGifs" :key="gif.id" class="cursor-pointer lg:h-48 h-32 lg:w-48 w-32">
+                                <img class="lg:h-48 h-32 lg:w-48 w-32" :src="gif.media_formats.gif.url" :alt="gif.title" @click="sendGif(gif)" />
+                            </div>
+                            <div v-else-if="gifUiStage == 'SEARCHING_GIF'" v-for="gif in gifs" :key="`search-${gif.id}`" class="cursor-pointer lg:h-48 h-32 lg:w-48 w-32">
+                                <img class="lg:h-48 h-32 lg:w-48 w-32" :src="gif.media_formats.gif.url" :alt="gif.title" @click="sendGif(gif)" />
+                            </div>
                         </div>
                     </template>
                 </UPopover>
