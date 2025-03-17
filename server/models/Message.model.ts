@@ -6,6 +6,7 @@ export class Message extends Model {
     declare authorId: string;
     declare conversationId: string;
     declare receiverId: string;
+    declare tenorGif: string;
     declare createdAt: Date;
     declare updatedAt: Date;
 
@@ -47,6 +48,13 @@ Message.init({
         references: {
             model: 'Users',
             key: 'id'
+        }
+    },
+    tenorGif: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        validate: {
+            isUrl: true
         }
     }
 }, { sequelize, timestamps: true, tableName: 'Messages' })

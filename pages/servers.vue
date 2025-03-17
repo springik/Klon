@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import ServerList from '~/components/ServerList.vue'
+import ServerDisplay from '~/components/ServerDisplay.vue'
+import ServerRequestsList from '~/components/ServerRequestsList.vue'
+
     definePageMeta({
         title: 'Servers',
         description: 'Servers page of the application',
@@ -28,6 +32,6 @@
 
 <template>
     <ServerList @serverSelected="onServerSelected" v-if="selectedTab === 'Servers' && selectedServer === null" />
-    <ServerDisplay @goBack="selectedServer = null" :server="selectedServer"v-else-if="selectedTab === 'Servers' && selectedServer !== null" />
+    <ServerDisplay @goBack="selectedServer = null" :server="selectedServer" v-else-if="selectedTab === 'Servers' && selectedServer !== null" />
     <ServerRequestsList v-if="selectedTab === 'Requests'" />
 </template>
