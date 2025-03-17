@@ -1,4 +1,3 @@
-import { log } from "console";
 import { User } from "~/server/models/User.model";
 
 export default defineOAuthGitHubEventHandler({
@@ -16,8 +15,6 @@ export default defineOAuthGitHubEventHandler({
                         avatarUrl: user.avatar_url
                     }
                 })
-                log(user)
-                userInstance.repos = user.repos_url
                 await setUserSession(event, { user: userInstance })
                 return sendRedirect(event, '/')
             } catch (error) {
