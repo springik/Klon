@@ -87,10 +87,11 @@
         $socket.on('conversations-list', (conversationsList : object[]) => {
             conversations.value = conversationsList
         })
-        $socket.on('conversation-messages', (messages : object[]) => {
+        $socket.on('conversation-messages', (data:{ messages : object[], polls: object[] }) => {
             selectedConversation.value = {
                 ...selectedConversation.value,
-                messages
+                messages: data.messages,
+                polls: data.polls
             }
             conversations.value = conversations.value?.map(conversation => {
                 if(conversation.id === selectedConversation.value?.id) {

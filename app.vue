@@ -1,5 +1,15 @@
 <script setup>
+  const { $socket } = useNuxtApp()
+  const snackbar = useSnackbar()
 
+  onBeforeMount(() => {
+    $socket.on('errr', (err) => {
+      snackbar.add({
+        message: err?.message || 'An error occurred',
+        type: 'error'
+      })
+    })
+  })
 </script>
 
 <template>

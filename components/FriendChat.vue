@@ -1,5 +1,6 @@
 <script setup lang="ts">
-    import { useRouter } from '#vue-router'
+    import { UButton } from '#components'
+import { useRouter } from '#vue-router'
 
 
     const props = defineProps({
@@ -10,6 +11,14 @@
     const loading = ref<boolean>(false)
     const messageAttachments = ref<{ file : File, name : string, extension : string }[] | null>(null)
     const fileInput = ref<HTMLInputElement | null>(null)
+    const gifUiOpen = ref<boolean>(false)
+    const gifs = ref<object[]>([])
+    const gifCategories = ref<object[]>([])
+    const categoryGifs = ref<object>({}) // like a map
+    //@ts-expect-error
+    const gifUiStage = ref<GifUiStage>('CHOOSING_CATEGORY')
+    const chosenCategory = ref<object | null>(null)
+    const gifSearch = ref<string>('')
     
     const emit = defineEmits(['goBack'])
 
@@ -24,6 +33,55 @@
     const attachmentSrc = (attachment) => {
         console.log(attachment);
         return URL.createObjectURL(attachment.file)
+    }
+    const openGifUi = async () => {
+        const { data, error } = await useFetch('/api/tenor/trending')
+        if(error.value) {
+            console.error(error.value)
+            return
+        }
+        console.log(data.value);
+        gifCategories.value = data.value
+        // @ts-expect-error
+        gifUiStage.value = 'CHOOSING_CATEGORY'
+        gifUiOpen.value = true
+    }
+    const chooseGifCategory = async (category: object) => {
+        const { data, error } = await useFetch(`/api/tenor/getGifsForCategory?searchterm=${category.searchterm}`)
+        if(error.value) {
+            console.error(error.value)
+            return
+        }
+        console.log(data.value);
+        // @ts-expect-error
+        categoryGifs.value = data.value.gifs
+        // @ts-expect-error
+        gifUiStage.value = 'CHOOSING_GIF'
+        chosenCategory.value = category
+
+    }
+    const sendGif = (gif: object) => {
+        console.log(gif);
+        const gifUrl = gif.media_formats.gif.url
+
+        $socket.emit('send-gif-to-friend', { gifUrl, receiverId: props.friend.id })
+    }
+    const closeGifUi = () => {
+        gifUiOpen.value = false
+        // @ts-expect-error
+        gifUiStage.value = 'CHOOSING_CATEGORY'
+    }
+    const goBackInGifUi = () => {
+        if(gifUiStage.value === 'CHOOSING_GIF') {
+            // @ts-expect-error
+            gifUiStage.value = 'CHOOSING_CATEGORY'
+            chosenCategory.value = null
+            categoryGifs.value = []
+        } else if(gifUiStage.value === 'SEARCHING_GIF') {
+            // @ts-expect-error
+            gifUiStage.value = 'CHOOSING_CATEGORY'
+            gifs.value = []
+        }
     }
 
     const addAttachment = () => {
@@ -137,9 +195,39 @@
                 </ul>
             </div>
             <div class="flex">
-                <UButton @click="addAttachment" label="Add attachment">
-                    <UIcon class="w-5 h-5" name="si:add-circle-line" />
-                </UButton>
+                <UPopover @update:open="closeGifUi" overlay :popper="{ placement: 'top-start', offsetDistance: 0 }" :ui="{ background: 'bg-gray-800', border: 'border-none', rounded: 'rounded-lg' }">
+                    <UButton label="+">
+                        <UIcon class="w-8 h-8" name="si:add-circle-line" />
+                    </UButton>
+                    <template v-if="!gifUiOpen" #panel>
+                        <div class="flex flex-col gap-y-2 bg-gray-800 p-2 rounded-lg">
+                            <UButton block @click="openGifUi" label="Share gif" trailing-icon="si:window-line" />
+                            <UButton block @click="addAttachment" label="Add attachment" trailing-icon="si:file-upload-fill">
+                            </UButton>
+                        </div>
+                    </template>
+                    <template v-else #panel>
+                        <div class="flex flex-row p-2 rounded-lg">
+                            <UButton variant="ghost" v-if="gifUiStage != 'CHOOSING_CATEGORY'" @click="goBackInGifUi" trailing-icon="si:arrow-left-line" />
+                            <UButton variant="ghost" v-else @click="closeGifUi" trailing-icon="si:close-circle-line" />
+                            <!--<UInput class="flex-1" v-model="gifSearch" placeholder="Search gifs" leading-icon="si:search-line" />-->
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 p-2 rounded-lg overflow-y-auto h-64">
+                            <div v-if="gifUiStage == 'CHOOSING_CATEGORY'" @click="chooseGifCategory(category)" v-for="category in gifCategories" :key="category.name" class="relative cursor-pointer lg:h-48 h-32 lg:w-48 w-32">
+                                <img class="lg:h-48 h-32 lg:w-48 w-32" :src="category.image" :alt="category.name" />
+                                <div class="uppercase text-center absolute bottom-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                                    {{ category.searchterm }}
+                                </div>
+                            </div>
+                            <div v-else-if="gifUiStage == 'CHOOSING_GIF'" v-for="gif in categoryGifs" :key="gif.id" class="cursor-pointer lg:h-48 h-32 lg:w-48 w-32">
+                                <img class="lg:h-48 h-32 lg:w-48 w-32" :src="gif.media_formats.gif.url" :alt="gif.title" @click="sendGif(gif)" />
+                            </div>
+                            <div v-else-if="gifUiStage == 'SEARCHING_GIF'" v-for="gif in gifs" :key="`search-${gif.id}`" class="cursor-pointer lg:h-48 h-32 lg:w-48 w-32">
+                                <img class="lg:h-48 h-32 lg:w-48 w-32" :src="gif.media_formats.gif.url" :alt="gif.title" @click="sendGif(gif)" />
+                            </div>
+                        </div>
+                    </template>
+                </UPopover>
                 <input multiple accept="image/webp, image/jpeg, image/png, .docx, .pdf, .pptx, .txt, text/*" type="file" ref="fileInput" class="hidden" @change="handleFileChange">
                 <UTextarea autoresize v-model="messageInput" class="w-full" :rows="1" size="xl" :maxrows="3" placeholder="Chat..." variant="outline" :model-modifiers="{ trim: true }"/>
                 <UButton :loading="loading" class="cursor-pointer" label="Send message" size="md" @click="sendMessage">
