@@ -210,7 +210,7 @@ import { useRouter } from '#vue-router'
                         <div class="flex flex-row p-2 rounded-lg">
                             <UButton variant="ghost" v-if="gifUiStage != 'CHOOSING_CATEGORY'" @click="goBackInGifUi" trailing-icon="si:arrow-left-line" />
                             <UButton variant="ghost" v-else @click="closeGifUi" trailing-icon="si:close-circle-line" />
-                            <UInput class="flex-1" v-model="gifSearch" placeholder="Search gifs" leading-icon="si:search-line" />
+                            <!--<UInput class="flex-1" v-model="gifSearch" placeholder="Search gifs" leading-icon="si:search-line" />-->
                         </div>
                         <div class="grid grid-cols-2 gap-4 p-2 rounded-lg overflow-y-auto h-64">
                             <div v-if="gifUiStage == 'CHOOSING_CATEGORY'" @click="chooseGifCategory(category)" v-for="category in gifCategories" :key="category.name" class="relative cursor-pointer lg:h-48 h-32 lg:w-48 w-32">
