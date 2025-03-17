@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { UButton } from '#components'
-
+import hljs from 'highlight.js'
 
 const props = defineProps({
     message: Object
@@ -21,6 +21,11 @@ const emit = defineEmits(['editMessage', 'deleteMessage'])
     const editedTime = computed(() => {
         const date = new Date(props.message.updatedAt)
         return `Edited: ${date.getHours()}:${date.getMinutes()}`
+    })
+    const messageView = computed(() => {
+        return isBeingEdited.value
+            ? messageValue.value || ''
+            : props.message.content
     })
     const edited = computed(() => {
         return props.message.updatedAt > props.message.createdAt
@@ -137,7 +142,8 @@ const emit = defineEmits(['editMessage', 'deleteMessage'])
                 </span>
             </div>
         </template>
-        <UTextarea v-if="message?.content" :resize="false" autoresize :disabled="!isBeingEdited"  :model-modifiers="{ trim: true }" :padded="true" variant="none" :ui="{ base: messageColor }" v-model="messageValue"/>
+        <UTextarea v-if="message?.content && isBeingEdited" :resize="false" autoresize :disabled="!isBeingEdited"  :model-modifiers="{ trim: true }" :padded="true" variant="none" :ui="{ base: messageColor }" v-model="messageView"/>
+        <pre v-highlight v-else><code>{{ messageView }}</code></pre>
         <ul class="flex flex-row gap-2" v-if="props.message.attachments">
             <li v-for="file in props.message.attachments">
                 <div v-if="isImage(file)">
