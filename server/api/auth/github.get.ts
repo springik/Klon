@@ -17,8 +17,7 @@ export default defineOAuthGitHubEventHandler({
                     }
                 })
                 log(user)
-                userInstance.repos = user.repos_url
-                await setUserSession(event, { user: userInstance })
+                await setUserSession(event, { user: userInstance, repos_url: user.repos_url })
                 return sendRedirect(event, '/')
             } catch (error) {
                 console.error(error)

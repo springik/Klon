@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { UButton } from '#components'
 import hljs from 'highlight.js'
+import { editMessage as editMessageAbility } from '#shared/utils/abilities'
 
 const props = defineProps({
     message: Object
@@ -142,8 +143,9 @@ const emit = defineEmits(['editMessage', 'deleteMessage'])
                 </span>
             </div>
         </template>
-        <UTextarea v-if="message?.content && isBeingEdited" :resize="false" autoresize :disabled="!isBeingEdited"  :model-modifiers="{ trim: true }" :padded="true" variant="none" :ui="{ base: messageColor }" v-model="messageView"/>
-        <pre v-highlight v-else><code>{{ messageView }}</code></pre>
+        <UTextarea v-if="message?.content && isBeingEdited && !message?.githubRepository" :resize="false" autoresize :disabled="!isBeingEdited"  :model-modifiers="{ trim: true }" :padded="true" variant="none" :ui="{ base: messageColor }" v-model="messageView"/>
+        <pre v-highlight v-else-if="message?.content"><code>{{ messageView }}</code></pre>
+        <RepositoryView :repository="message?.githubRepository" v-else />
         <ul class="flex flex-row gap-2" v-if="props.message.attachments">
             <li v-for="file in props.message.attachments">
                 <div v-if="isImage(file)">
@@ -161,9 +163,11 @@ const emit = defineEmits(['editMessage', 'deleteMessage'])
                 <span class="mb-1 mx-1 text-white">{{ postTime }}</span>
                 <span v-show="edited" class="mb-1 mx-1 lg:mx-2 text-nowrap font-light">{{ editedTime }}</span>
                 <div class="gap-2 flex">
+                <Can :ability="editMessageAbility" :args="[message]">
                 <UButton @click="startEditingMessage" label="Edit" v-if="session.user.id == message.author.id && !isBeingEdited">
                     <UIcon class="w-5 h-5" name="si:edit-simple-line" />
                 </UButton>
+                </Can>
                 <UButton @click="editMessage" label="Save" v-if="session.user.id == message.author.id && isBeingEdited">
                     <UIcon class="w-5 h-5" name="si:check-fill" />
                 </UButton>

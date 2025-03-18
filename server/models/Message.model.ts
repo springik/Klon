@@ -9,6 +9,7 @@ export class Message extends Model {
     declare tenorGif: string;
     declare createdAt: Date;
     declare updatedAt: Date;
+    declare githubRepository: any;
 
     static associate(models : any) {
         this.belongsTo(models.User, { foreignKey: 'authorId', onDelete: 'CASCADE', onUpdate: 'CASCADE', as: 'author' })
@@ -56,5 +57,9 @@ Message.init({
         validate: {
             isUrl: true
         }
+    },
+    githubRepository: {
+        type: DataTypes.JSONB,
+        allowNull: true,
     }
 }, { sequelize, timestamps: true, tableName: 'Messages' })

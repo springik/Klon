@@ -22,6 +22,8 @@ import { log } from 'console'
     const gifUiStage = ref<GifUiStage>('CHOOSING_CATEGORY')
     const chosenCategory = ref<object | null>(null)
     const gifSearch = ref<string>('')
+    const repositoriesUiOpen = ref<boolean>(false)
+    const repositories = ref<object[]>([])
 
     const emit = defineEmits(['goBack'])
 
@@ -70,6 +72,7 @@ import { log } from 'console'
         $socket.emit('send-gif-to-conversation', { gifUrl, conversationId: props.conversation.id })
     }
     const closeGifUi = () => {
+        repositoriesUiOpen.value = false
         gifUiOpen.value = false
         // @ts-expect-error
         gifUiStage.value = 'CHOOSING_CATEGORY'
@@ -159,6 +162,16 @@ import { log } from 'console'
     const removeOption = (index: number) => {
         optionsCount.value.splice(index, 1)
         options.value.splice(index, 1)
+    }
+    const openReposUi = () => {
+        console.log('opening repos ui');
+        repositoriesUiOpen.value = true
+    }
+    const sendRepo = (repo: object) => {
+        console.log('sending repo');
+        $socket.emit('send-repo-to-conversation', { repo, conversationId: props.conversation.id })
+        repositoriesUiOpen.value = false
+
     }
 
     onMounted(() => {
@@ -265,16 +278,17 @@ import { log } from 'console'
                     <UButton label="+">
                         <UIcon class="w-8 h-8" name="si:add-circle-line" />
                     </UButton>
-                    <template v-if="!gifUiOpen" #panel>
+                    <template v-if="!gifUiOpen && !repositoriesUiOpen" #panel>
                         <div class="flex flex-col gap-y-2 bg-gray-800 p-2 rounded-lg">
                             <UButton block @click="createPoll" label="Create poll" trailing-icon="si:dashboard-customize-duotone">
                             </UButton>
+                            <UButton block @click="openReposUi" label="Share repository" trailing-icon="si:align-vert-center-simple-duotone" />
                             <UButton block @click="openGifUi" label="Share gif" trailing-icon="si:window-line" />
                             <UButton block @click="addAttachment" label="Add attachment" trailing-icon="si:file-upload-fill">
                             </UButton>
                         </div>
                     </template>
-                    <template v-else #panel>
+                    <template v-else-if="gifUiOpen" #panel>
                         <div class="flex flex-row p-2 rounded-lg">
                             <UButton variant="ghost" v-if="gifUiStage != 'CHOOSING_CATEGORY'" @click="goBackInGifUi" trailing-icon="si:arrow-left-line" />
                             <UButton variant="ghost" v-else @click="closeGifUi" trailing-icon="si:close-circle-line" />
@@ -294,6 +308,9 @@ import { log } from 'console'
                                 <img class="lg:h-48 h-32 lg:w-48 w-32" :src="gif.media_formats.gif.url" :alt="gif.title" @click="sendGif(gif)" />
                             </div>
                         </div>
+                    </template>
+                    <template v-else #panel>
+                        <RepositoriesView @sendRepo="sendRepo" />
                     </template>
                 </UPopover>
                 <input multiple accept="image/webp, image/jpeg, image/png, .docx, .pdf, .pptx, .txt, text/*" type="file" ref="fileInput" class="hidden" @change="handleFileChange">
