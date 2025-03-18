@@ -15,5 +15,5 @@ export const addCall = defineAbility((user : User, server : Server) => {
     return true
 })
 export const editMessage = defineAbility((user : User, message : Message) => {
-    return user.id === message.authorId
+    return user.id === message.authorId && message.githubRepository === undefined || message.githubRepository === null
 })

@@ -25,7 +25,7 @@ export default defineNitroPlugin(async (nitro) => {
                 model.associate(sequelize.models)
         })
         await sequelize.authenticate()
-        await sequelize.sync({ alter: false, force: false })
+        await sequelize.sync({ alter: true, force: false })
     } catch (error) {
         console.log(error)
     }

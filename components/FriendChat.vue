@@ -19,6 +19,8 @@ import { useRouter } from '#vue-router'
     const gifUiStage = ref<GifUiStage>('CHOOSING_CATEGORY')
     const chosenCategory = ref<object | null>(null)
     const gifSearch = ref<string>('')
+    const repositoriesUiOpen = ref<boolean>(false)
+    const repositories = ref<object[]>([])
     
     const emit = defineEmits(['goBack'])
 
@@ -66,8 +68,9 @@ import { useRouter } from '#vue-router'
 
         $socket.emit('send-gif-to-friend', { gifUrl, receiverId: props.friend.id })
     }
-    const closeGifUi = () => {
+    const closeUis = () => {
         gifUiOpen.value = false
+        repositoriesUiOpen.value = false
         // @ts-expect-error
         gifUiStage.value = 'CHOOSING_CATEGORY'
     }
@@ -130,6 +133,15 @@ import { useRouter } from '#vue-router'
     const isImage = (attachment) => {
         const imageExtensions = ['jpg', 'png', 'jpeg', 'gif', 'bmp', 'webp']
         return imageExtensions.includes(attachment.extension.toLowerCase())
+    }
+    const openReposUi = () => {
+        console.log('opening repos ui');
+        repositoriesUiOpen.value = true
+    }
+    const sendRepo = (repo: object) => {
+        console.log('sending repo', repo);
+        $socket.emit('send-repo-to-friend', { repo, receiverId: props.friend.id })
+        repositoriesUiOpen.value = false
     }
 
     onMounted(() => {
@@ -195,18 +207,19 @@ import { useRouter } from '#vue-router'
                 </ul>
             </div>
             <div class="flex">
-                <UPopover @update:open="closeGifUi" overlay :popper="{ placement: 'top-start', offsetDistance: 0 }" :ui="{ background: 'bg-gray-800', border: 'border-none', rounded: 'rounded-lg' }">
+                <UPopover @update:open="closeUis" overlay :popper="{ placement: 'top-start', offsetDistance: 0 }" :ui="{ background: 'bg-gray-800', border: 'border-none', rounded: 'rounded-lg' }">
                     <UButton label="+">
                         <UIcon class="w-8 h-8" name="si:add-circle-line" />
                     </UButton>
-                    <template v-if="!gifUiOpen" #panel>
+                    <template v-if="!gifUiOpen && !repositoriesUiOpen" #panel>
                         <div class="flex flex-col gap-y-2 bg-gray-800 p-2 rounded-lg">
                             <UButton block @click="openGifUi" label="Share gif" trailing-icon="si:window-line" />
+                            <UButton block @click="openReposUi" label="Share repository" trailing-icon="si:align-vert-center-simple-duotone" />
                             <UButton block @click="addAttachment" label="Add attachment" trailing-icon="si:file-upload-fill">
                             </UButton>
                         </div>
                     </template>
-                    <template v-else #panel>
+                    <template v-else-if="gifUiOpen" #panel>
                         <div class="flex flex-row p-2 rounded-lg">
                             <UButton variant="ghost" v-if="gifUiStage != 'CHOOSING_CATEGORY'" @click="goBackInGifUi" trailing-icon="si:arrow-left-line" />
                             <UButton variant="ghost" v-else @click="closeGifUi" trailing-icon="si:close-circle-line" />
@@ -226,6 +239,9 @@ import { useRouter } from '#vue-router'
                                 <img class="lg:h-48 h-32 lg:w-48 w-32" :src="gif.media_formats.gif.url" :alt="gif.title" @click="sendGif(gif)" />
                             </div>
                         </div>
+                    </template>
+                    <template v-else #panel>
+                        <RepositoriesView @sendRepo="sendRepo" />
                     </template>
                 </UPopover>
                 <input multiple accept="image/webp, image/jpeg, image/png, .docx, .pdf, .pptx, .txt, text/*" type="file" ref="fileInput" class="hidden" @change="handleFileChange">

@@ -794,6 +794,50 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       })
     })
 
+    socket.on('send-repo-to-friend', async (data: { receiverId: string, repo: { id: number, name: string, description: string | null, url: string } }) => {
+      const message = await Message.create({
+        authorId: socket.handshake.session.user.id,
+        receiverId: data.receiverId,
+        githubRepository: data.repo
+      })
+      await message.reload({
+        include: [{
+          model: User,
+          as: 'author'
+        }]
+      })
+      const userSocket : Socket | undefined = io.sockets.sockets.get(users.get(socket.handshake.session.user.id));
+      userSocket?.emit('message', message);
+      const receiverSocket : Socket | undefined = io.sockets.sockets.get(users.get(data.receiverId));
+      receiverSocket?.emit('message', message);
+    })
+    socket.on('send-repo-to-conversation', async (data: { conversationId: string, repo: { id: number, name: string, description: string | null, url: string } }) => {
+      const message = await Message.create({
+        authorId: socket.handshake.session.user.id,
+        conversationId: data.conversationId,
+        githubRepository: data.repo
+      })
+      await message.reload({
+        include: [
+          {
+            model: User,
+            as: 'author'
+          }
+        ]
+      })
+      const conversation = await Conversation.findByPk(data.conversationId);
+
+      const serverMembers = ServerMember.findAll({
+        where: {
+          serverId: conversation?.serverId
+        }
+      })
+      serverMembers.forEach(async (member) => {
+        const memberSocket : Socket | undefined = io.sockets.sockets.get(users.get(member.userId));
+        memberSocket?.emit('message', message);
+      })
+    })
+
     socket.on('test-event', (data) => {
         console.log(data);
     })
